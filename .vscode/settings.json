@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "windows.h": "c",
+        "zenlib_core.h": "c"
+    }
+}
