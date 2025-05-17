@@ -1,4 +1,4 @@
-#include "../zenlib_core.h"
+#include "../include/zenlib_core.h"
 
 #if defined(ZEN_OS_WINDOWS)
 
@@ -35,17 +35,14 @@
             printf("CreateWindowEx failed with error code: %lu\n", error);
             return NULL;        
         }
+
         window.class_name = class_name.content;
-
         __zencore_context__.windows[__zencore_context__.window_count] = window;
-        return &__zencore_context__.windows[__zencore_context__.window_count++];
-
-    }
-
-    void zen_show_window(ZEN_Window* window) {
         
-        ShowWindow(window->handle, __zencore_context__.show_cmd);
-        UpdateWindow(window->handle);
+        ShowWindow(window.handle, __zencore_context__.show_cmd);
+        UpdateWindow(window.handle);
+
+        return &__zencore_context__.windows[__zencore_context__.window_count++];
 
     }
 
