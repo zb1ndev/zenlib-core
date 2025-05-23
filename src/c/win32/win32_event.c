@@ -1,4 +1,4 @@
-#include "../include/zenlib_core.h"
+#include "../../include/zenlib_core.h"
 
 #if defined(ZEN_OS_WINDOWS)
 
@@ -11,38 +11,57 @@
         if (window == NULL)
             return DefWindowProc(hwnd, uMsg, wParam, lParam);
 
+        if (window->win_proc_extension != NULL)
+            window->win_proc_extension(window, hwnd, uMsg, wParam, lParam);
+
         switch (uMsg) {
 
             case WM_MOUSEMOVE: {
+
                 int x = GET_X_LPARAM(lParam);
                 int y = GET_Y_LPARAM(lParam);
                 window->event_handler.mouse_state.x = x;
                 window->event_handler.mouse_state.y = y;
+
+                if (window->event_handler.on_mouse_move_callback != NULL)
+                    window->event_handler.on_mouse_move_callback(window);
+
             } return 0;
 
             case WM_LBUTTONDOWN:
             case WM_LBUTTONUP: {
+
                 ZEN_MouseState* mouse = &window->event_handler.mouse_state;
                 mouse->prev_button_states[0] = mouse->button_states[0];
                 mouse->button_states[0] = (uMsg == WM_LBUTTONDOWN);
-                return 0;
-            }
+
+                if (window->event_handler.on_mouse_button != NULL)
+                    window->event_handler.on_mouse_button(window);
+
+            } return 0;
 
             case WM_RBUTTONDOWN:
             case WM_RBUTTONUP: {
+
                 ZEN_MouseState* mouse = &window->event_handler.mouse_state;
                 mouse->prev_button_states[2] = mouse->button_states[2];
                 mouse->button_states[2] = (uMsg == WM_RBUTTONDOWN);
-                return 0;
-            }
+                
+                if (window->event_handler.on_mouse_button != NULL)
+                    window->event_handler.on_mouse_button(window);
+            
+            } return 0;
 
             case WM_MBUTTONDOWN:
             case WM_MBUTTONUP: {
                 ZEN_MouseState* mouse = &window->event_handler.mouse_state;
                 mouse->prev_button_states[1] = mouse->button_states[1];
                 mouse->button_states[1] = (uMsg == WM_MBUTTONDOWN);
-                return 0;
-            }
+
+                if (window->event_handler.on_mouse_button != NULL)
+                    window->event_handler.on_mouse_button(window);
+
+            } return 0;
 
             case WM_KEYDOWN: {
                 UINT vkCode = (UINT)wParam;
@@ -74,10 +93,9 @@
                 PostQuitMessage(0);
             } return 0;
 
-            case WM_CLOSE:{
-                if (window->event_handler.close_callback == NULL || 
-                    window->event_handler.close_callback(window))
-                        window->event_handler.should_close = true;
+            case WM_CLOSE: {
+                if (window->event_handler.close_callback == NULL || window->event_handler.close_callback(window))
+                    window->event_handler.should_close = true;
             }  return 0;
 
             default:
@@ -192,31 +210,3 @@
     }   
 
 #endif // ZEN_OS_WINDOWS
-
-bool zen_get_key_up(ZEN_Window* window, ZEN_KeyCode code) {
-    return (window->event_handler.prev_key_states[code] && 
-        !window->event_handler.key_states[code]);
-}
-
-bool zen_get_key_down(ZEN_Window* window, ZEN_KeyCode code) {
-    return (!window->event_handler.prev_key_states[code] && 
-        window->event_handler.key_states[code]);
-}
-
-bool zen_get_key_pressed(ZEN_Window* window, ZEN_KeyCode code) {
-    return (window->event_handler.key_states[code]);
-}
-
-bool zen_get_mouse_up(ZEN_Window* window, size_t button) {
-    return (window->event_handler.mouse_state.prev_button_states[button] && 
-        !window->event_handler.mouse_state.button_states[button]);
-}
-
-bool zen_get_mouse_down(ZEN_Window* window, size_t button) {
-    return (!window->event_handler.mouse_state.prev_button_states[button] && 
-        window->event_handler.mouse_state.button_states[button]);
-}
-
-bool zen_get_mouse_pressed(ZEN_Window* window, size_t button) {
-    return (window->event_handler.mouse_state.button_states[button]);
-}

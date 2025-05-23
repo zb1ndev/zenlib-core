@@ -37,7 +37,8 @@
     #include <stdint.h>
     #include <stdbool.h>
     #include <assert.h>
-    #include <stdatomic.h>
+
+    // #include "vulkan.h"
 
     #if defined(ZEN_OS_WINDOWS)
         #include <windows.h>
@@ -45,7 +46,13 @@
     #endif // ZEN_OS_WINDOWS
 
     #define ZEN_MAX_WINDOWS 10
+    
+    typedef enum ZEN_RendererAPI {
 
+        ZEN_RAPI_None, ZEN_RAPI_OpenGL, 
+        ZEN_RAPI_Vulkan, ZEN_RAPI_DirectX
+
+    } ZEN_RendererAPI;
 
     typedef enum ZEN_KeyCode {
 
@@ -112,8 +119,7 @@
         void (*on_key_down_callback)(void* data);
         
         void (*on_mouse_move_callback)(void* data);
-        void (*on_mouse_move_down)(void* data);
-        void (*on_mouse_move_up)(void* data);
+        void (*on_mouse_button)(void* data);
         
         void (*resize_callback)(void* data, ssize_t new_width, ssize_t new_height);
         void (*minimize_callback)(void* data);
@@ -141,8 +147,10 @@
         #if defined(ZEN_OS_WINDOWS)
             MSG msg;
             HWND handle;
+            void (*win_proc_extension)(void* window, HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
         #endif // ZEN_OS_WINDOWS
 
+        ZEN_RendererAPI api;
         ZEN_WindowStyle style;
         ZEN_EventHandler event_handler;
 
@@ -182,7 +190,7 @@
      * @param height The height of the window.
      * @returns A reference to the window.
      */
-    ZEN_Window* zen_create_window(const char* title, size_t width, size_t height, ZEN_WindowStyle style); 
+    ZEN_Window* zen_create_window(const char* title, size_t width, size_t height, ZEN_RendererAPI api); 
     
     /** A function that determines if a window should close.
      * @param window The window you want to watch.
@@ -256,6 +264,13 @@
      * @returns Whether the button is pressed.
      */
     bool zen_get_mouse_pressed(ZEN_Window* window, size_t button);
+
+    /** A function that initializes the given api on the provided window.
+     * @param window The window you want to bind the api to.
+     * @param api The api you want to initialize.
+     * @returns Whether the function has succeded ```0 = success```.
+     */
+    int zen_initialize_renderer(ZEN_Window* window, ZEN_RendererAPI api);
 
     #if defined(ZEN_STRIP_PREFIX)
 
