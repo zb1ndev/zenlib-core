@@ -37,7 +37,7 @@ Link against the compiled library when building your project.
 
 ## Documentation
 
-- [API Reference](docs/API.md)
+For documentation, see the ```zenlib-core``` wiki page.
 
 ## License
 
