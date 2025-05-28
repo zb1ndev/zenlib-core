@@ -461,6 +461,9 @@
         #define EventHandler ZEN_EventHandler
         #define WindowStyle ZEN_WindowStyle
         #define Window ZEN_Window
+        #define VulkanWindowContext ZEN_VulkanWindowContext
+        #define VulkanInfo ZEN_VulkanInfo
+        #define VulkenContext ZEN_VulkenContext
 
         #define create_window zen_create_window
         #define window_should_close zen_window_should_close
@@ -473,6 +476,27 @@
         #define get_mouse_up zen_get_mouse_up
         #define get_mouse_down zen_get_mouse_down
         #define get_mouse_pressed zen_get_mouse_pressed
+
+        #define global_init_directx zen_global_init_directx
+        #define global_init_opengl zen_global_init_opengl
+        #define global_init_vulkan zen_global_init_vulkan
+        #define initialize_renderer zen_initialize_renderer
+
+        #define set_vulkan_extensions zen_set_vulkan_extensions
+        #define vk_device_has_extensions zen_vk_device_has_extensions
+        #define vk_find_queue_families zen_vk_find_queue_families
+        #define vk_rate_physical_device zen_vk_rate_physical_device
+        #define vk_is_device_suitable zen_vk_is_device_suitable
+        #define vk_query_swapchain_support zen_vk_query_swapchain_support
+        #define vk_choose_swap_surface_format zen_vk_choose_swap_surface_format
+        #define vk_choose_swap_present_mode zen_vk_choose_swap_present_mode
+        #define vk_choose_swap_extent zen_vk_choose_swap_extent
+        #define vk_create_instance zen_vk_create_instance
+        #define vk_create_surface zen_vk_create_surface
+        #define vk_pick_physical_device zen_vk_pick_physical_device
+        #define vk_create_logical_device zen_vk_create_logical_device
+        #define vk_create_swapchain zen_vk_create_swapchain
+        #define vk_create_image_views zen_vk_create_image_views
 
     #endif // ZEN_STRIP_PREFIX
 
