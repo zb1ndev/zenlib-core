@@ -75,15 +75,58 @@ int zen_initialize_renderer(ZEN_Window* window, ZEN_RendererAPI api) {
             return -1;
         }
 
-        if (__zencore_context__.vk_context.create_graphics_pipline == NULL) {
-            log_error("\"create_graphics_pipline\" was not initialized.");
-            return -1;
-        }
-        
-        if (__zencore_context__.vk_context.create_graphics_pipline(window) < 0) {
-            log_error("Failed to create graphics pipline.");
-            return -1;
-        }
+        #pragma region Create Render Pass
+
+            if (__zencore_context__.vk_context.create_render_pass == NULL) {
+                log_error("\"create_render_pass\" was not initialized.");
+                return -1;
+            }
+
+            if (__zencore_context__.vk_context.create_render_pass(window) < 0) {
+                log_error("Failed to create render pass.");
+                return -1;
+            }
+
+        #pragma endregion // Create Render Pass
+        #pragma region Create Graphics Pipline
+
+            if (__zencore_context__.vk_context.create_graphics_pipline == NULL) {
+                log_error("\"create_graphics_pipline\" was not initialized.");
+                return -1;
+            }
+            
+            if (__zencore_context__.vk_context.create_graphics_pipline(window) < 0) {
+                log_error("Failed to create graphics pipline.");
+                return -1;
+            }
+
+        #pragma endregion // Create Graphics Pipline
+        #pragma region Create Frame Buffer
+
+            if (__zencore_context__.vk_context.create_frame_buffer == NULL) {
+                log_error("\"create_frame_buffer\" was not initialized.");
+                return -1;
+            }
+
+            if (__zencore_context__.vk_context.create_frame_buffer(window) < 0) {
+                log_error("Failed to create frame buffer.");
+                return -1;
+            }
+
+        #pragma endregion // Create Frame Buffer
+        #pragma region Create Command Pool
+
+            if (__zencore_context__.vk_context.create_command_pool == NULL) {
+                log_error("\"create_command_pool\" was not initialized.");
+                return -1;
+            }
+
+            if (__zencore_context__.vk_context.create_command_pool(window) < 0) {
+                log_error("Failed to create command pool.");
+                return -1;
+            }
+
+        #pragma endregion // Create Command Pool
 
         return 0;
 

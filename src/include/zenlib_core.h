@@ -221,8 +221,12 @@
         ssize_t graphics_family;
         ssize_t present_family;
 
+        int (*create_command_pool)(ZEN_Window* window);
+        int (*create_frame_buffer)(ZEN_Window* window);
+        int (*create_render_pass)(ZEN_Window* window);
         int (*create_graphics_pipline)(ZEN_Window* window);
-        void (*destroy_graphics_pipline)(ZEN_Window* window);
+
+        void (*destroy_vk_pipeline)(ZEN_Window* window);
 
     } ZEN_VulkenContext;
 

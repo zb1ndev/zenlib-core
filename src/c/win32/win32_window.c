@@ -73,8 +73,8 @@
 
         if (window->vk_context.surface != VK_NULL_HANDLE) {
 
-            if (__zencore_context__.vk_context.destroy_graphics_pipline != NULL)
-                __zencore_context__.vk_context.destroy_graphics_pipline(window);
+            if (__zencore_context__.vk_context.destroy_vk_pipeline != NULL)
+                __zencore_context__.vk_context.destroy_vk_pipeline(window);
 
             if (window->vk_context.swap_chain_image_views)
                 for (size_t i = 0; i < window->vk_context.swap_chain_image_view_count; i++)
