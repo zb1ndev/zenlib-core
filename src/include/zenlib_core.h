@@ -155,7 +155,6 @@
         
         size_t present_mode_count;
         VkPresentModeKHR* present_modes;
-
         
         size_t swap_chain_image_count;
         VkImage* swap_chain_images;
@@ -348,24 +347,102 @@
     
     #pragma region Vulkan
 
+        /** Sets the required Vulkan extensions to be used by the Vulkan instance.
+         * @param info A structure containing Vulkan extension names and counts.
+         */
         void zen_set_vulkan_extensions(ZEN_VulkanInfo info);
+
+        /** Checks whether the specified Vulkan physical device supports the required extensions.
+         * @param device The Vulkan physical device to check.
+         * @returns ```0``` if all required extensions are supported, ```-1``` otherwise.
+         */
         int zen_vk_device_has_extensions(VkPhysicalDevice device);
+
+        /** Finds and stores suitable queue family indices for graphics and presentation.
+         * @param window The window associated with surface presentation.
+         * @param device The Vulkan physical device to inspect.
+         * @returns ```0``` on success, ```-1``` on failure.
+         */
         int zen_vk_find_queue_families(ZEN_Window* window, VkPhysicalDevice device);
+
+        /** Calculates a score to rate the suitability of a Vulkan physical device.
+         * @param device The Vulkan physical device to rate.
+         * @returns A non-zero score representing suitability; higher is better.
+         */
         size_t zen_vk_rate_physical_device(VkPhysicalDevice device);
+
+        /** Determines if a Vulkan physical device is suitable for rendering.
+         * @param window The window to associate with the device for presentation support.
+         * @param device The Vulkan physical device to evaluate.
+         * @returns ```true``` if the device is suitable, ```false``` otherwise.
+         */
         bool zen_vk_is_device_suitable(ZEN_Window* window, VkPhysicalDevice device);
+
+        /** Queries support details for the swapchain of the given physical device and window.
+         * @param window The window whose surface is queried.
+         * @param device The Vulkan physical device to query.
+         * @returns ```0``` on success, ```-1``` on failure.
+         */
         int zen_vk_query_swapchain_support(ZEN_Window* window, VkPhysicalDevice device);
-        
+
+        /** Chooses the most appropriate surface format for the swapchain.
+         * @param window The window for which the surface format is selected.
+         * @returns A suitable VkSurfaceFormatKHR for the swapchain.
+         */
         VkSurfaceFormatKHR zen_vk_choose_swap_surface_format(ZEN_Window* window);
+
+        /** Selects the best presentation mode for the swapchain.
+         * @param window The window for which the present mode is selected.
+         * @returns A suitable VkPresentModeKHR mode.
+         */
         VkPresentModeKHR zen_vk_choose_swap_present_mode(ZEN_Window* window);
+
+        /** Chooses the optimal extent (resolution) for the swapchain images.
+         * @param window The window to determine the extent from.
+         * @returns A VkExtent2D structure representing the chosen resolution.
+         */
         VkExtent2D zen_vk_choose_swap_extent(ZEN_Window* window);
 
+        /** Creates the Vulkan instance with the specified API version.
+         * @param api_version The Vulkan API version to use (e.g., ```VK_API_VERSION_1_2```).
+         * @returns ```0``` on success, ```-1``` on failure.
+         */
         int zen_vk_create_instance(uint32_t api_version);
+
+        /** Creates the Vulkan surface associated with the specified window.
+         * @param window The window to create the surface for.
+         * @returns ```0``` on success, ```-1``` on failure.
+         */
         int zen_vk_create_surface(ZEN_Window* window);
+
+        /** Picks a suitable Vulkan physical device for rendering and presentation.
+         * @param window The window used to evaluate device presentation support.
+         * @returns ```0``` on success, ```-1``` on failure.
+         */
         int zen_vk_pick_physical_device(ZEN_Window* window);
+
+        /** Creates the Vulkan logical device and retrieves required queues.
+         * @returns ```0``` on success, ```-1``` on failure.
+         */
         int zen_vk_create_logical_device(void);
+
+        /** Creates the swapchain for the specified window.
+         * @param window The window to create the swapchain for.
+         * @returns ```0``` on success, ```-1``` on failure.
+         */
         int zen_vk_create_swapchain(ZEN_Window* window);
+
+        /** Creates image views for the images in the swapchain.
+         * @param window The window associated with the swapchain images.
+         * @returns ```0``` on success, ```-1``` on failure.
+         */
         int zen_vk_create_image_views(ZEN_Window* window);
 
+        /** Initializes the Vulkan subsystem, including instance, surface, and device setup.
+         * @param window The window to initialize Vulkan with.
+         * @param api_version The Vulkan API version to use.
+         * @returns ```0``` on success, ```-1``` on failure.
+         */
         int zen_global_init_vulkan(ZEN_Window* window, uint32_t api_version);
 
     #pragma endregion // Vulkan
