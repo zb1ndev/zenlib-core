@@ -203,7 +203,7 @@
             case VK_SCROLL:    zen_set_key_state(window, 94, value); break;
 
             default:
-                printf("Key Not Implemented: code=%u (index=%d)\n", code, code - 65);
+                printf("[WARNING] Key Not Implemented: code=%u (index=%d)\n", code, code - 65);
                 break;
 
         }

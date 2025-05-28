@@ -15,7 +15,9 @@
         };
         RegisterClass(&window_class);
 
-        ZEN_Window window = (ZEN_Window) {
+        ZEN_Window* window = &__zencore_context__.windows[__zencore_context__.window_count];
+
+        *window = (ZEN_Window) {
             .title = title,
             .width = width,
             .height = height,
@@ -24,31 +26,29 @@
             .context_index = __zencore_context__.window_count
         };
 
-        window.handle = CreateWindowEx(
+        window->handle = CreateWindowEx(
             0, class_name.content, title,    
             WS_OVERLAPPEDWINDOW,            
             CW_USEDEFAULT, CW_USEDEFAULT, width, height,
-            __zencore_context__.windows[0].handle, NULL, __zencore_context__.h_instance, &window        
+            __zencore_context__.windows[0].handle, NULL, __zencore_context__.h_instance, window        
         );
 
-        if (window.handle == NULL) {
-            DWORD error = GetLastError();
-            printf("CreateWindowEx failed with error code: %lu\n", error);
+        if (window->handle == NULL) {
+            log_error("CreateWindowEx failed.");
             return NULL;        
         }
 
-        window.class_name = class_name.content;
-        __zencore_context__.windows[__zencore_context__.window_count] = window;
-        
-        if (zen_initialize_renderer(&window, api) != 0) {
+        window->class_name = class_name.content;
+
+        if (zen_initialize_renderer(window, api) < 0) {
+            log_error("Failed to initialize renderer on window.");
             __zencore_context__.window_count++;
-            zen_destroy_window(&window);
-            perror("Failed to initialize renderer on window");
-            exit(1);
+            zen_destroy_window(window);
+            return NULL;
         }
 
-        ShowWindow(window.handle, __zencore_context__.show_cmd);
-        UpdateWindow(window.handle);
+        ShowWindow(__zencore_context__.windows[__zencore_context__.window_count].handle, __zencore_context__.show_cmd);
+        UpdateWindow(__zencore_context__.windows[__zencore_context__.window_count].handle);
 
         return &__zencore_context__.windows[__zencore_context__.window_count++];
 
@@ -59,7 +59,7 @@
         if (window == NULL)
             return true;
         
-        GetMessage(&window->msg, NULL, 0, 0);
+        PeekMessage(&window->msg, NULL, 0, 0, PM_REMOVE);
         TranslateMessage(&window->msg);
         DispatchMessage(&window->msg);
         return window->event_handler.should_close;
@@ -71,6 +71,39 @@
         if (window == NULL)
             return;
 
+        if (window->vk_context.surface != VK_NULL_HANDLE) {
+
+            if (__zencore_context__.vk_context.destroy_graphics_pipline != NULL)
+                __zencore_context__.vk_context.destroy_graphics_pipline(window);
+
+            if (window->vk_context.swap_chain_image_views)
+                for (size_t i = 0; i < window->vk_context.swap_chain_image_view_count; i++)
+                    vkDestroyImageView(__zencore_context__.vk_context.device, window->vk_context.swap_chain_image_views[i], NULL);
+            
+
+            if (window->vk_context.swap_chain != VK_NULL_HANDLE)
+                vkDestroySwapchainKHR(__zencore_context__.vk_context.device, window->vk_context.swap_chain, NULL);
+            if (window->vk_context.surface != VK_NULL_HANDLE)
+                vkDestroySurfaceKHR(__zencore_context__.vk_context.instance, window->vk_context.surface, NULL);
+            
+            if (window->vk_context.present_modes)
+                free(window->vk_context.present_modes);
+            if (window->vk_context.surface_formats)
+                free(window->vk_context.surface_formats);
+            if (window->vk_context.swap_chain_images)
+                free(window->vk_context.swap_chain_images);
+            if (window->vk_context.swap_chain_image_views)
+                free(window->vk_context.swap_chain_image_views);
+
+        }
+
+        if ((__zencore_context__.window_count - 1) == 0) {
+            if (__zencore_context__.vk_context.initialized) {
+                vkDestroyDevice(__zencore_context__.vk_context.device, NULL);
+                vkDestroyInstance(__zencore_context__.vk_context.instance, NULL);
+            }
+        }
+
         DestroyWindow(window->handle);
         free(window->class_name);
 
@@ -81,7 +114,7 @@
         
         for (size_t i = 0, j = 0; i < __zencore_context__.window_count; i++) {
             if (i != destroyed_index) j++;
-            __zencore_context__.windows[j] = temp[i];    
+            __zencore_context__.windows[j] = temp[i];
         }
 
         __zencore_context__.window_count--;
