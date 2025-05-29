@@ -75,6 +75,11 @@ int zen_initialize_renderer(ZEN_Window* window, ZEN_RendererAPI api) {
             return -1;
         }
 
+        if (zen_vk_create_image_views(window) < 0) {
+            log_error("Failed to create image views.");
+            return -1;
+        }
+
         #pragma region Create Render Pass
 
             if (__zencore_context__.vk_context.create_render_pass == NULL) {

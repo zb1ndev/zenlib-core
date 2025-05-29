@@ -20,5 +20,6 @@ for %%o in (build\int\*.o) do (
     set OBJFILES=!OBJFILES! %%o
 )
 ar rcs build\zenlib-core.a !OBJFILES!
+echo Finished
 
 endlocal

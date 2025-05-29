@@ -411,6 +411,11 @@
         }
 
         vkGetSwapchainImagesKHR(__zencore_context__.vk_context.device, window->vk_context.swap_chain, &image_count, NULL);
+        if (image_count == 0) {
+            log_error("Failed to find any chain images.");
+            return -1;
+        }
+
         window->vk_context.swap_chain_image_count = (size_t)image_count;
         window->vk_context.swap_chain_images = malloc(sizeof(VkImage) * image_count);
         if (window->vk_context.swap_chain_images == NULL) {
@@ -434,7 +439,6 @@
 
     int zen_vk_create_image_views(ZEN_Window* window) {
 
-        window->vk_context.swap_chain_image_view_count = window->vk_context.swap_chain_image_count;
         window->vk_context.swap_chain_image_views = malloc(sizeof(VkImageView) * window->vk_context.swap_chain_image_count);
         if (window->vk_context.swap_chain_image_views == NULL) {
             log_error("Failed to allocate space for swap chain image views.");
@@ -467,7 +471,9 @@
                 log_error("Failed to create image views.");
                 return -1;
             }
-            
+
+            window->vk_context.swap_chain_image_view_count++;
+
         }
 
         return 0;
