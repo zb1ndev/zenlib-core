@@ -29,8 +29,37 @@
 #if !defined(ZENLIB_CORE_H)
 #define ZENLIB_CORE_H
 
-    #include "platform.h"
-    #include "vulkan/vulkan.h"
+    #define ZEN_DEBUG // Remove for Release
+
+    #if defined(ZEN_DEBUG)
+        #define debug_log(msg) printf("[LOG]"msg"\n")
+        #define debug_log_va(msg, ...) printf("[LOG]"msg"\n", __VA_ARGS__)
+    #endif // ZEN_DEBUG
+
+    #define log_error(msg) printf("[ERROR]"msg"\n")
+    #define log_error_va(msg, ...) printf("[ERROR]"msg"\n", __VA_ARGS__)
+
+
+    // Windows
+    #if defined(_WIN32) || defined(_WIN64)
+        #define ZEN_OS_WINDOWS
+    #endif
+
+    // macOS
+    #if defined(__APPLE__) && defined(__MACH__)
+        #define ZEN_OS_MAC
+    #endif
+
+    // Linux
+    #if defined(__linux__)
+        #define ZEN_OS_LINUX
+    #endif
+
+    // Unix (includes macOS and Linux)
+    #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+        #define ZEN_OS_UNIX
+    #endif
+
     #include "zstring.h"
 
     #include <stdlib.h>
@@ -38,6 +67,9 @@
     #include <stdint.h>
     #include <stdbool.h>
     #include <assert.h>
+    
+    #include "vulkan/vulkan.h"
+    #include "../../deps/include/cglm/cglm.h"
 
     #if defined(ZEN_OS_WINDOWS)
         #include <windows.h>
@@ -48,13 +80,10 @@
     #define ZEN_VULKAN_VERSION VK_MAKE_VERSION(1,0,0)
     #define ZEN_MAX_WINDOWS 10
 
-    #define ZEN_DEBUG // Remove for Release
-    #if defined(ZEN_DEBUG)
-        #define debug_log(msg) printf("[LOG] %s\n", msg)
-    #endif // ZEN_DEBUG
+    #define zen_vk_offset_of(s, m) (long)(&(((s*)0)->m))
+    #define ZEN_DEFAULT_VERTEX_SHADER ""
+    #define ZEN_DEFAULT_FRAGMENT_SHADER ""
 
-    #define log_error(msg) printf("[ERROR] %s\n", msg)
-    
     typedef enum ZEN_RendererAPI {
 
         ZEN_RAPI_None, ZEN_RAPI_OpenGL, 
@@ -129,44 +158,14 @@
         void (*on_mouse_move_callback)(void* data);
         void (*on_mouse_button)(void* data);
         
-        void (*resize_callback)(void* data, ssize_t new_width, ssize_t new_height);
-        void (*minimize_callback)(void* data);
-        bool (*close_callback)(void* data);
+        void (*on_resize_callback)(void* data, ssize_t new_width, ssize_t new_height);
+        void (*on_minimize_callback)(void* data);
+        bool (*on_close_callback)(void* data);
         
         bool should_close;
         float delta_time;
 
     } ZEN_EventHandler;
-
-    typedef struct ZEN_WindowStyle {
-
-        double border_raduis;
-        void (*custom_toolbar)(void* data, size_t width, size_t height); // If not NULL then expand viewport over the default toolbar.
-
-    } ZEN_WindowStyle;
-
-    typedef struct ZEN_VulkanWindowContext {
-
-        VkSurfaceKHR surface;
-        VkSurfaceCapabilitiesKHR surface_capabilities;
-        
-        size_t surface_format_count;
-        VkSurfaceFormatKHR* surface_formats;
-        
-        size_t present_mode_count;
-        VkPresentModeKHR* present_modes;
-        
-        size_t swap_chain_image_count;
-        VkImage* swap_chain_images;
-        VkSwapchainKHR swap_chain;
-
-        VkFormat swap_chain_image_format;
-        VkExtent2D swap_chain_extent;
-
-        size_t swap_chain_image_view_count;
-        VkImageView* swap_chain_image_views;
-
-    } ZEN_VulkanWindowContext;
 
     typedef struct ZEN_Window {
 
@@ -184,51 +183,124 @@
         #endif // ZEN_OS_WINDOWS
 
         ZEN_RendererAPI api;
-        ZEN_VulkanWindowContext vk_context;
-
-        ZEN_WindowStyle style;
         ZEN_EventHandler event_handler;
 
         size_t context_index;
+        size_t renderer_context_index;
 
     } ZEN_Window;
 
-    typedef struct ZEN_VulkanInfo {
+    typedef struct ZEN_Shader {
+
+        const char* name;
+
+        const char* vertex_shader_path;
+        const char* fragment_shader_path;
+
+    } ZEN_Shader;
+
+    typedef struct ZEN_Vertex {
         
-        size_t instance_extension_count;
-        size_t device_extension_count;
+        vec2 pos;
+        vec3 color;
 
-        const char** instance_extensions;
-        const char** device_extensions;
-        enum VkPresentModeKHR mode;
+    } ZEN_Vertex;
 
-    } ZEN_VulkanInfo;
+    typedef struct ZEN_RenderObject {
+        
+        size_t vertex_count;
+        ZEN_Vertex* vertices;
 
-    typedef struct ZEN_VulkenContext {
+        size_t index_count;
+        int* indices;
+
+        ZEN_Shader material;
+
+    } ZEN_RenderObject;
+
+    typedef struct ZEN_RenderObjectRef {
+
+        size_t index;
+        ZEN_RenderObject* object;
+
+    } ZEN_RenderObjectRef;
+
+    typedef struct ZEN_RenderPipline {
+
+        VkPipeline graphics_pipeline;
+        VkPipelineLayout pipeline_layout;
+    
+    } ZEN_RenderPipline;
+
+    typedef struct ZEN_VulkanSurfaceInfo {
+
+        ZEN_Window* window;
+        VkSurfaceKHR surface;
+
+        size_t surface_format_count;
+        VkSurfaceFormatKHR* surface_formats;
+
+        size_t present_mode_count;
+        VkPresentModeKHR* present_modes;
+
+        VkExtent2D swap_chain_extent;
+        VkFormat swap_chain_image_format;
+        VkSurfaceCapabilitiesKHR surface_capabilities;
+
+        VkSwapchainKHR swap_chain;
+
+        size_t swap_chain_image_count;
+        VkImage* swap_chain_images;
+
+        size_t swap_chain_image_view_count;
+        VkImageView* swap_chain_image_views;
+
+        VkSemaphore* image_available_semaphores;
+        VkSemaphore* render_finished_semaphores;
+        VkFence* in_flight_fences;
+
+        VkFramebuffer* frame_buffers;
+        VkCommandBuffer* command_buffers;
+
+    } ZEN_VulkanSurfaceInfo;
+
+    typedef struct ZEN_VulkanInfo {
 
         bool initialized;
         uint32_t version;
+
+    } ZEN_VulkanInfo;
+
+    typedef struct ZEN_VulkanContext {
+        
         ZEN_VulkanInfo info;
+
+        size_t surface_count;
+        ZEN_VulkanSurfaceInfo* surfaces;
 
         VkInstance instance;
 
         VkDevice device;
         VkPhysicalDevice physical_device;
 
+        uint32_t graphics_family;
+        uint32_t present_family;
+
         VkQueue graphics_queue;
         VkQueue present_queue;
 
-        ssize_t graphics_family;
-        ssize_t present_family;
+        VkCommandPool command_pool;
 
-        int (*create_command_pool)(ZEN_Window* window);
-        int (*create_frame_buffer)(ZEN_Window* window);
-        int (*create_render_pass)(ZEN_Window* window);
-        int (*create_graphics_pipline)(ZEN_Window* window);
+        size_t graphics_pipline_count;
+        ZEN_RenderPipline* graphics_pipelines;
 
-        void (*destroy_vk_pipeline)(ZEN_Window* window);
+        size_t shader_count;
+        size_t shader_capacity;
+        ZEN_Shader* shaders;
+        
+        VkRenderPass render_pass;
 
-    } ZEN_VulkenContext;
+    } ZEN_VulkanContext;
 
     #if defined(ZEN_OS_WINDOWS)
     
@@ -242,7 +314,13 @@
             ZEN_Window windows[ZEN_MAX_WINDOWS];
             size_t window_count;
 
-            ZEN_VulkenContext vk_context;
+            ZEN_VulkanContext vk_context;
+
+            size_t render_object_count;
+            size_t render_object_last_count;
+
+            size_t render_object_capacity;
+            ZEN_RenderObject* render_objects;
 
         } ZEN_CoreContext;
         extern ZEN_CoreContext __zencore_context__;
@@ -338,125 +416,76 @@
      * @returns Whether the button is pressed.
      */
     bool zen_get_mouse_pressed(ZEN_Window* window, size_t button);
+
+    char* zen_read_file_contents(const char* file_path, size_t* file_size);
     
-    /** A function that initializes directx.
-     * @returns Whether the function has succeded ```0 = success```.
-     */
-    int zen_global_init_directx(void);
-    
-    /** A function that initializes opengl.
-     * @returns Whether the function has succeded ```0 = success```.
-     */
-    int zen_global_init_opengl(void);
-    
-    #pragma region Vulkan
-
-        /** Sets the required Vulkan extensions to be used by the Vulkan instance.
-         * @param info A structure containing Vulkan extension names and counts.
-         */
-        void zen_set_vulkan_extensions(ZEN_VulkanInfo info);
-
-        /** Checks whether the specified Vulkan physical device supports the required extensions.
-         * @param device The Vulkan physical device to check.
-         * @returns ```0``` if all required extensions are supported, ```-1``` otherwise.
-         */
-        int zen_vk_device_has_extensions(VkPhysicalDevice device);
-
-        /** Finds and stores suitable queue family indices for graphics and presentation.
-         * @param window The window associated with surface presentation.
-         * @param device The Vulkan physical device to inspect.
-         * @returns ```0``` on success, ```-1``` on failure.
-         */
-        int zen_vk_find_queue_families(ZEN_Window* window, VkPhysicalDevice device);
-
-        /** Calculates a score to rate the suitability of a Vulkan physical device.
-         * @param device The Vulkan physical device to rate.
-         * @returns A non-zero score representing suitability; higher is better.
-         */
-        size_t zen_vk_rate_physical_device(VkPhysicalDevice device);
-
-        /** Determines if a Vulkan physical device is suitable for rendering.
-         * @param window The window to associate with the device for presentation support.
-         * @param device The Vulkan physical device to evaluate.
-         * @returns ```true``` if the device is suitable, ```false``` otherwise.
-         */
-        bool zen_vk_is_device_suitable(ZEN_Window* window, VkPhysicalDevice device);
-
-        /** Queries support details for the swapchain of the given physical device and window.
-         * @param window The window whose surface is queried.
-         * @param device The Vulkan physical device to query.
-         * @returns ```0``` on success, ```-1``` on failure.
-         */
-        int zen_vk_query_swapchain_support(ZEN_Window* window, VkPhysicalDevice device);
-
-        /** Chooses the most appropriate surface format for the swapchain.
-         * @param window The window for which the surface format is selected.
-         * @returns A suitable VkSurfaceFormatKHR for the swapchain.
-         */
-        VkSurfaceFormatKHR zen_vk_choose_swap_surface_format(ZEN_Window* window);
-
-        /** Selects the best presentation mode for the swapchain.
-         * @param window The window for which the present mode is selected.
-         * @returns A suitable VkPresentModeKHR mode.
-         */
-        VkPresentModeKHR zen_vk_choose_swap_present_mode(ZEN_Window* window);
-
-        /** Chooses the optimal extent (resolution) for the swapchain images.
-         * @param window The window to determine the extent from.
-         * @returns A VkExtent2D structure representing the chosen resolution.
-         */
-        VkExtent2D zen_vk_choose_swap_extent(ZEN_Window* window);
-
-        /** Creates the Vulkan instance with the specified API version.
-         * @param api_version The Vulkan API version to use (e.g., ```VK_API_VERSION_1_2```).
-         * @returns ```0``` on success, ```-1``` on failure.
-         */
-        int zen_vk_create_instance(uint32_t api_version);
-
-        /** Creates the Vulkan surface associated with the specified window.
-         * @param window The window to create the surface for.
-         * @returns ```0``` on success, ```-1``` on failure.
-         */
-        int zen_vk_create_surface(ZEN_Window* window);
-
-        /** Picks a suitable Vulkan physical device for rendering and presentation.
-         * @param window The window used to evaluate device presentation support.
-         * @returns ```0``` on success, ```-1``` on failure.
-         */
-        int zen_vk_pick_physical_device(ZEN_Window* window);
-
-        /** Creates the Vulkan logical device and retrieves required queues.
-         * @returns ```0``` on success, ```-1``` on failure.
-         */
-        int zen_vk_create_logical_device(void);
-
-        /** Creates the swapchain for the specified window.
-         * @param window The window to create the swapchain for.
-         * @returns ```0``` on success, ```-1``` on failure.
-         */
-        int zen_vk_create_swapchain(ZEN_Window* window);
-
-        /** Creates image views for the images in the swapchain.
-         * @param window The window associated with the swapchain images.
-         * @returns ```0``` on success, ```-1``` on failure.
-         */
-        int zen_vk_create_image_views(ZEN_Window* window);
-
-        /** Initializes the Vulkan subsystem, including instance, surface, and device setup.
-         * @param window The window to initialize Vulkan with.
-         * @param api_version The Vulkan API version to use.
-         * @returns ```0``` on success, ```-1``` on failure.
-         */
-        int zen_global_init_vulkan(ZEN_Window* window, uint32_t api_version);
-
-    #pragma endregion // Vulkan
-
     /** A function that initializes the given api on the provided window.
      * @param window The window you want to bind the api to.
      * @param api The api you want to initialize.
      * @returns Whether the function has succeded ```0 = success```.
      */
     int zen_initialize_renderer(ZEN_Window* window, ZEN_RendererAPI api);
+
+    int zen_destroy_renderer(ZEN_Window* window, ZEN_RendererAPI api);
+
+    int zen_append_shader(ZEN_Shader object);
+    void zen_destroy_shader(void);
+
+    ZEN_RenderObjectRef zen_append_render_object(ZEN_RenderObject object);
+    int zen_remove_render_object(ZEN_RenderObjectRef object);
+    int zen_clear_render_objects(void);
+
+    int zen_draw_frame(ZEN_Window* window);
+    float zen_get_fps(ZEN_Window* window);
+    float zen_get_delta_time(ZEN_Window* window);
+
+    #pragma region Vulkan
+
+        /** Initializes the Vulkan subsystem, including instance, surface, and device setup.
+         * @param window The window to initialize Vulkan with.
+         * @param api_version The Vulkan API version to use.
+         * @returns ```0``` on success, ```-1``` on failure.
+         */
+        int zen_init_vulkan(ZEN_Window* window, uint32_t api_version);
+        void zen_destroy_vulkan(size_t context_index);
+
+        char** zen_vk_get_instance_extensions(size_t* count);
+        char **zen_vk_get_device_extensions(size_t *count);
+
+        bool zen_vk_find_queue_families(VkPhysicalDevice device, size_t context_index);
+        bool zen_vk_query_swapchain_support(VkPhysicalDevice device, size_t context_index);
+        bool zen_vk_device_has_extensions(VkPhysicalDevice device);
+        bool zen_vk_check_device_api_version(VkPhysicalDevice device);
+        bool zen_vk_device_is_suitable(VkPhysicalDevice device, size_t context_index);
+
+        VkSurfaceFormatKHR zen_vk_choose_swap_surface_format(size_t context_index);
+        VkPresentModeKHR zen_vk_choose_swap_present_mode(size_t context_index);
+        VkExtent2D zen_vk_choose_swap_extent(size_t context_index);
+
+        VkShaderModule zen_vk_create_shader_module(const char* code, size_t code_size);
+
+        static VkVertexInputBindingDescription zen_vk_get_vertex_binding_description();
+        static VkVertexInputAttributeDescription* zen_vk_get_vertex_attribute_descriptions();
+
+        int zen_vk_create_instance(void);
+        int zen_vk_create_surface(size_t context_index);
+        int zen_vk_pick_physical_device(size_t context_index);
+        int zen_vk_create_logical_device(void);
+        int zen_vk_create_swap_chain(size_t context_index);
+        int zen_vk_create_image_views(size_t context_index);
+        int zen_vk_create_render_pass(size_t context_index);
+        int zen_vk_create_default_shader(void);
+        int zen_vk_create_graphics_pipelines(void);
+        int zen_vk_create_graphics_pipeline(ZEN_Shader material);
+        
+        int zen_vk_create_framebuffers(size_t context_index);
+        int zen_vk_create_command_buffers(size_t context_index);
+        int zen_vk_create_sync_objects(size_t context_index);
+        
+        int zen_vk_create_command_pool(void);
+        int zen_vk_create_vertex_buffer(void);
+
+    #pragma endregion // Vulkan
 
     #if defined(ZEN_STRIP_PREFIX)
 
@@ -465,10 +494,7 @@
         #define EventHandler ZEN_EventHandler
         #define WindowStyle ZEN_WindowStyle
         #define Window ZEN_Window
-        #define VulkanWindowContext ZEN_VulkanWindowContext
-        #define VulkanInfo ZEN_VulkanInfo
-        #define VulkenContext ZEN_VulkenContext
-
+        
         #define create_window zen_create_window
         #define window_should_close zen_window_should_close
         #define destroy_window zen_destroy_window
@@ -481,26 +507,8 @@
         #define get_mouse_down zen_get_mouse_down
         #define get_mouse_pressed zen_get_mouse_pressed
 
-        #define global_init_directx zen_global_init_directx
-        #define global_init_opengl zen_global_init_opengl
-        #define global_init_vulkan zen_global_init_vulkan
         #define initialize_renderer zen_initialize_renderer
 
-        #define set_vulkan_extensions zen_set_vulkan_extensions
-        #define vk_device_has_extensions zen_vk_device_has_extensions
-        #define vk_find_queue_families zen_vk_find_queue_families
-        #define vk_rate_physical_device zen_vk_rate_physical_device
-        #define vk_is_device_suitable zen_vk_is_device_suitable
-        #define vk_query_swapchain_support zen_vk_query_swapchain_support
-        #define vk_choose_swap_surface_format zen_vk_choose_swap_surface_format
-        #define vk_choose_swap_present_mode zen_vk_choose_swap_present_mode
-        #define vk_choose_swap_extent zen_vk_choose_swap_extent
-        #define vk_create_instance zen_vk_create_instance
-        #define vk_create_surface zen_vk_create_surface
-        #define vk_pick_physical_device zen_vk_pick_physical_device
-        #define vk_create_logical_device zen_vk_create_logical_device
-        #define vk_create_swapchain zen_vk_create_swapchain
-        #define vk_create_image_views zen_vk_create_image_views
 
     #endif // ZEN_STRIP_PREFIX
 

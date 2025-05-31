@@ -60,6 +60,7 @@
         "text_encoding": "c",
         "cinttypes": "c",
         "typeinfo": "c",
-        "variant": "c"
+        "variant": "c",
+        "stdbool.h": "c"
     }
 }

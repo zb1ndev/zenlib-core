@@ -79,14 +79,14 @@
             } return 0;
             
             case WM_SIZE: {
-                if (wParam == SIZE_MINIMIZED && window->event_handler.minimize_callback != NULL)
-                    window->event_handler.minimize_callback(window);
+                if (wParam == SIZE_MINIMIZED && window->event_handler.on_minimize_callback != NULL)
+                    window->event_handler.on_minimize_callback(window);
             } return 0;
 
             case WM_SIZING:{
                 RECT* rect = (RECT*)lParam;
-                if (window->event_handler.resize_callback != NULL)
-                    window->event_handler.resize_callback(window, rect->right - rect->left, rect->bottom - rect->top);
+                if (window->event_handler.on_resize_callback != NULL)
+                    window->event_handler.on_resize_callback(window, rect->right - rect->left, rect->bottom - rect->top);
             } return TRUE;
 
             case WM_DESTROY:{
@@ -94,7 +94,7 @@
             } return 0;
 
             case WM_CLOSE: {
-                if (window->event_handler.close_callback == NULL || window->event_handler.close_callback(window))
+                if (window->event_handler.on_close_callback == NULL || window->event_handler.on_close_callback(window))
                     window->event_handler.should_close = true;
             }  return 0;
 

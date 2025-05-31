@@ -21,7 +21,6 @@
             .title = title,
             .width = width,
             .height = height,
-            .style = (ZEN_WindowStyle){0, NULL},
             .api = api,
             .context_index = __zencore_context__.window_count
         };
@@ -71,38 +70,8 @@
         if (window == NULL)
             return;
 
-        if (window->vk_context.surface != VK_NULL_HANDLE) {
-
-            if (__zencore_context__.vk_context.destroy_vk_pipeline != NULL)
-                __zencore_context__.vk_context.destroy_vk_pipeline(window);
-
-            if (window->vk_context.swap_chain_image_views)
-                for (size_t i = 0; i < window->vk_context.swap_chain_image_view_count; i++)
-                    vkDestroyImageView(__zencore_context__.vk_context.device, window->vk_context.swap_chain_image_views[i], NULL);
-            
-
-            if (window->vk_context.swap_chain != VK_NULL_HANDLE)
-                vkDestroySwapchainKHR(__zencore_context__.vk_context.device, window->vk_context.swap_chain, NULL);
-            if (window->vk_context.surface != VK_NULL_HANDLE)
-                vkDestroySurfaceKHR(__zencore_context__.vk_context.instance, window->vk_context.surface, NULL);
-            
-            if (window->vk_context.present_modes)
-                free(window->vk_context.present_modes);
-            if (window->vk_context.surface_formats)
-                free(window->vk_context.surface_formats);
-            if (window->vk_context.swap_chain_images)
-                free(window->vk_context.swap_chain_images);
-            if (window->vk_context.swap_chain_image_views)
-                free(window->vk_context.swap_chain_image_views);
-
-        }
-
-        if ((__zencore_context__.window_count - 1) == 0) {
-            if (__zencore_context__.vk_context.initialized) {
-                vkDestroyDevice(__zencore_context__.vk_context.device, NULL);
-                vkDestroyInstance(__zencore_context__.vk_context.instance, NULL);
-            }
-        }
+        if (zen_destroy_renderer(window, window->api) < 0)
+            log_error("Failed to destroy renderer.");
 
         DestroyWindow(window->handle);
         free(window->class_name);

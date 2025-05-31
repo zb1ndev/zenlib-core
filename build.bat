@@ -2,7 +2,6 @@
 setlocal enabledelayedexpansion
 
 set INCLUDE=-IC:\VulkanSDK\1.4.313.0\Include
-set LIBS=-LC:\VulkanSDK\1.4.313.0\Lib -lvulkan-1 -luser32 -lkernel32 -lgdi32
 set FLAGS=-std=c99 -Wall -Wextra
 
 if not exist build\int mkdir build\int
@@ -21,5 +20,7 @@ for %%o in (build\int\*.o) do (
 )
 ar rcs build\zenlib-core.a !OBJFILES!
 echo Finished
+
+call .\examples\vulkan\build.bat
 
 endlocal
