@@ -43,6 +43,7 @@ bool zen_get_mouse_down(ZEN_Window* window, size_t button) {
         window->event_handler.mouse_state.prev_button_states[button] = window->event_handler.mouse_state.button_states[button];
         return true;
     }
+
     return false;
 
 }

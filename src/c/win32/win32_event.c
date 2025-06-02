@@ -81,6 +81,8 @@
             case WM_SIZE: {
                 if (wParam == SIZE_MINIMIZED && window->event_handler.on_minimize_callback != NULL)
                     window->event_handler.on_minimize_callback(window);
+                if (wParam == SIZE_RESTORED && window->event_handler.on_restore_callback != NULL)
+                    window->event_handler.on_restore_callback(window);
             } return 0;
 
             case WM_SIZING:{

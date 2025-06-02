@@ -1,5 +1,6 @@
-REM C:/VulkanSDK/1.4.313.0/Bin/glslc.exe examples/vulkan/shaders/shader.vert -o examples/vulkan/shaders/compiled/vert.spv
-REM C:/VulkanSDK/1.4.313.0/Bin/glslc.exe examples/vulkan/shaders/shader.frag -o examples/vulkan/shaders/compiled/frag.spv
+C:/VulkanSDK/1.4.313.0/Bin/glslc.exe examples/vulkan/shaders/shader.vert -o examples/vulkan/shaders/compiled/vert.spv
+C:/VulkanSDK/1.4.313.0/Bin/glslc.exe examples/vulkan/shaders/shader.frag -o examples/vulkan/shaders/compiled/frag.spv
+C:/VulkanSDK/1.4.313.0/Bin/glslc.exe examples/vulkan/shaders/shader2.frag -o examples/vulkan/shaders/compiled/frag2.spv
 
 set INCLUDE=-I"C:\VulkanSDK\1.4.313.0\Include"
 set LIBS=-L"C:\VulkanSDK\1.4.313.0\Lib" -lvulkan-1 -luser32 -lkernel32 -lgdi32

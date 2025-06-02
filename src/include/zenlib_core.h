@@ -32,12 +32,12 @@
     #define ZEN_DEBUG // Remove for Release
 
     #if defined(ZEN_DEBUG)
-        #define debug_log(msg) printf("[LOG]"msg"\n")
-        #define debug_log_va(msg, ...) printf("[LOG]"msg"\n", __VA_ARGS__)
+        #define debug_log(msg) printf("[LOG] "msg"\n")
+        #define debug_log_va(msg, ...) printf("[LOG] "msg"\n", __VA_ARGS__)
     #endif // ZEN_DEBUG
 
-    #define log_error(msg) printf("[ERROR]"msg"\n")
-    #define log_error_va(msg, ...) printf("[ERROR]"msg"\n", __VA_ARGS__)
+    #define log_error(msg) printf("[ERROR] "msg"\n")
+    #define log_error_va(msg, ...) printf("[ERROR] "msg"\n", __VA_ARGS__)
 
 
     // Windows
@@ -79,10 +79,9 @@
 
     #define ZEN_VULKAN_VERSION VK_MAKE_VERSION(1,0,0)
     #define ZEN_MAX_WINDOWS 10
+    #define ZEN_MAX_FRAMES_IN_FLIGHT 2
 
     #define zen_vk_offset_of(s, m) (long)(&(((s*)0)->m))
-    #define ZEN_DEFAULT_VERTEX_SHADER ""
-    #define ZEN_DEFAULT_FRAGMENT_SHADER ""
 
     typedef enum ZEN_RendererAPI {
 
@@ -160,6 +159,7 @@
         
         void (*on_resize_callback)(void* data, ssize_t new_width, ssize_t new_height);
         void (*on_minimize_callback)(void* data);
+        void (*on_restore_callback)(void* data);
         bool (*on_close_callback)(void* data);
         
         bool should_close;
@@ -190,14 +190,12 @@
 
     } ZEN_Window;
 
-    typedef struct ZEN_Shader {
+    typedef struct ZEN_RenderPipline {
 
-        const char* name;
-
-        const char* vertex_shader_path;
-        const char* fragment_shader_path;
-
-    } ZEN_Shader;
+        VkPipeline graphics_pipeline;
+        VkPipelineLayout pipeline_layout;
+    
+    } ZEN_RenderPipline;
 
     typedef struct ZEN_Vertex {
         
@@ -206,15 +204,29 @@
 
     } ZEN_Vertex;
 
+    typedef struct ZEN_Shader {
+
+        const char* name;
+
+        const char* vertex_shader_path;
+        const char* fragment_shader_path;
+
+        ZEN_RenderPipline* pipline;
+
+    } ZEN_Shader;
+
     typedef struct ZEN_RenderObject {
         
+        bool enabled;
+        size_t index;
+
         size_t vertex_count;
         ZEN_Vertex* vertices;
 
         size_t index_count;
         int* indices;
 
-        ZEN_Shader material;
+        size_t shader;
 
     } ZEN_RenderObject;
 
@@ -224,13 +236,6 @@
         ZEN_RenderObject* object;
 
     } ZEN_RenderObjectRef;
-
-    typedef struct ZEN_RenderPipline {
-
-        VkPipeline graphics_pipeline;
-        VkPipelineLayout pipeline_layout;
-    
-    } ZEN_RenderPipline;
 
     typedef struct ZEN_VulkanSurfaceInfo {
 
@@ -274,11 +279,14 @@
     typedef struct ZEN_VulkanContext {
         
         ZEN_VulkanInfo info;
+        size_t current_frame;
 
         size_t surface_count;
         ZEN_VulkanSurfaceInfo* surfaces;
 
         VkInstance instance;
+        VkBuffer vertex_buffer;
+        VkDeviceMemory vertex_buffer_memory;
 
         VkDevice device;
         VkPhysicalDevice physical_device;
@@ -425,15 +433,16 @@
      * @returns Whether the function has succeded ```0 = success```.
      */
     int zen_initialize_renderer(ZEN_Window* window, ZEN_RendererAPI api);
-
     int zen_destroy_renderer(ZEN_Window* window, ZEN_RendererAPI api);
-
-    int zen_append_shader(ZEN_Shader object);
-    void zen_destroy_shader(void);
+    size_t zen_append_shader(ZEN_Shader shader);
 
     ZEN_RenderObjectRef zen_append_render_object(ZEN_RenderObject object);
     int zen_remove_render_object(ZEN_RenderObjectRef object);
     int zen_clear_render_objects(void);
+
+    uint64_t zen_get_vertex_count(void);
+    uint64_t zen_get_vertex_count_at_index(size_t index);
+    ZEN_Vertex* zen_get_vertices(void);
 
     int zen_draw_frame(ZEN_Window* window);
     float zen_get_fps(ZEN_Window* window);
@@ -441,16 +450,13 @@
 
     #pragma region Vulkan
 
-        /** Initializes the Vulkan subsystem, including instance, surface, and device setup.
-         * @param window The window to initialize Vulkan with.
-         * @param api_version The Vulkan API version to use.
-         * @returns ```0``` on success, ```-1``` on failure.
-         */
-        int zen_init_vulkan(ZEN_Window* window, uint32_t api_version);
-        void zen_destroy_vulkan(size_t context_index);
+        int zen_vk_draw_frame(size_t context_index);
 
-        char** zen_vk_get_instance_extensions(size_t* count);
-        char **zen_vk_get_device_extensions(size_t *count);
+        int zen_init_vulkan(ZEN_Window* window, uint32_t api_version);
+        void zen_destroy_vulkan(bool is_last, size_t context_index);
+
+        const char** zen_vk_get_instance_extensions(size_t* count);
+        const char ** zen_vk_get_device_extensions(size_t *count);
 
         bool zen_vk_find_queue_families(VkPhysicalDevice device, size_t context_index);
         bool zen_vk_query_swapchain_support(VkPhysicalDevice device, size_t context_index);
@@ -464,8 +470,12 @@
 
         VkShaderModule zen_vk_create_shader_module(const char* code, size_t code_size);
 
-        static VkVertexInputBindingDescription zen_vk_get_vertex_binding_description();
-        static VkVertexInputAttributeDescription* zen_vk_get_vertex_attribute_descriptions();
+        VkVertexInputBindingDescription zen_vk_get_vertex_binding_description();
+        VkVertexInputAttributeDescription* zen_vk_get_vertex_attribute_descriptions();
+
+        uint32_t zen_vk_find_memory_type(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        int zen_vk_recreate_swapchain(size_t context_index);
+        int zen_vk_resize_vertex_buffer(void);
 
         int zen_vk_create_instance(void);
         int zen_vk_create_surface(size_t context_index);
@@ -474,16 +484,13 @@
         int zen_vk_create_swap_chain(size_t context_index);
         int zen_vk_create_image_views(size_t context_index);
         int zen_vk_create_render_pass(size_t context_index);
-        int zen_vk_create_default_shader(void);
         int zen_vk_create_graphics_pipelines(void);
-        int zen_vk_create_graphics_pipeline(ZEN_Shader material);
-        
+        int zen_vk_create_graphics_pipeline(ZEN_Shader* shader);
         int zen_vk_create_framebuffers(size_t context_index);
-        int zen_vk_create_command_buffers(size_t context_index);
-        int zen_vk_create_sync_objects(size_t context_index);
-        
         int zen_vk_create_command_pool(void);
         int zen_vk_create_vertex_buffer(void);
+        int zen_vk_create_command_buffers(size_t context_index);
+        int zen_vk_create_sync_objects(size_t context_index);
 
     #pragma endregion // Vulkan
 

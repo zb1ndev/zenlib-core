@@ -61,6 +61,7 @@
         PeekMessage(&window->msg, NULL, 0, 0, PM_REMOVE);
         TranslateMessage(&window->msg);
         DispatchMessage(&window->msg);
+
         return window->event_handler.should_close;
         
     }

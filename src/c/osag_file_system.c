@@ -4,7 +4,7 @@ char* zen_read_file_contents(const char* file_path, size_t* file_size) {
 
     FILE *file = fopen(file_path, "rb"); 
     if (file == NULL) {
-        log_error("Failed to open file.");
+        log_error_va("Failed to open file : %s", file_path);
         return NULL;
     }
 
