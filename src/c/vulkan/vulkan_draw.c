@@ -3,31 +3,41 @@
 int zen_vk_draw_frame(size_t context_index) {
     
     ZEN_VulkanContext* context = &__zencore_context__.vk_context;
-    ZEN_VulkanSurfaceInfo* surface = &context->surfaces[context_index];
+    ZEN_VulkanSurfaceInfo* info = &context->surfaces[context_index];
     size_t current_frame = context->current_frame;
 
     vkQueueWaitIdle(__zencore_context__.vk_context.present_queue);
-    vkWaitForFences(context->device, 1, &surface->in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
+
+    if (info->window->event_handler.resized) {
+        info->window->event_handler.resized = false;
+        zen_vk_recreate_swapchain(context_index);
+        return 0;
+    }
+
+    vkWaitForFences(context->device, 1, &info->in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
     uint32_t image_index;
-    VkResult result = vkAcquireNextImageKHR(
+    VkResult result = vkAcquireNextImageKHR (
         context->device,
-        surface->swap_chain,
+        info->swap_chain,
         UINT64_MAX,
-        surface->image_available_semaphores[current_frame],
+        info->image_available_semaphores[current_frame],
         VK_NULL_HANDLE,
         &image_index
     );
 
-    if (result != VK_SUCCESS) {
-        log_error("Failed to acquire swapchain image.");
-        return -1;
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        zen_vk_recreate_swapchain(context_index);
+        return 0;
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        log_error("Failed to acquire swap chain image.");
+        exit(1);
     }
 
-    vkResetFences(context->device, 1, &surface->in_flight_fences[current_frame]);
-    vkResetCommandBuffer(surface->command_buffers[current_frame], 0);
+    vkResetFences(context->device, 1, &info->in_flight_fences[current_frame]);
+    vkResetCommandBuffer(info->command_buffers[current_frame], 0);
 
-    VkCommandBuffer cmd = surface->command_buffers[current_frame];
+    VkCommandBuffer cmd = info->command_buffers[current_frame];
 
     VkCommandBufferBeginInfo begin_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -37,8 +47,8 @@ int zen_vk_draw_frame(size_t context_index) {
     VkRenderPassBeginInfo render_pass_info = {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass = context->render_pass,
-        .framebuffer = surface->frame_buffers[image_index],
-        .renderArea = { {0, 0}, surface->swap_chain_extent },
+        .framebuffer = info->frame_buffers[image_index],
+        .renderArea = { {0, 0}, info->swap_chain_extent },
         .clearValueCount = 1,
         .pClearValues = (VkClearValue[]){{.color = {{0.0f, 0.0f, 0.0f, 1.0f}}}},
     };
@@ -48,8 +58,8 @@ int zen_vk_draw_frame(size_t context_index) {
     VkViewport viewport = {
         .x = 0.0f,
         .y = 0.0f,
-        .width = (float)surface->swap_chain_extent.width,
-        .height = (float)surface->swap_chain_extent.height,
+        .width = (float)info->swap_chain_extent.width,
+        .height = (float)info->swap_chain_extent.height,
         .minDepth = 0.0f,
         .maxDepth = 1.0f
     };
@@ -57,17 +67,17 @@ int zen_vk_draw_frame(size_t context_index) {
 
     VkRect2D scissor = {
         .offset = {0, 0},
-        .extent = surface->swap_chain_extent
+        .extent = info->swap_chain_extent
     };
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
     for (size_t i = 0; i < __zencore_context__.render_object_count; i++) {
 
         ZEN_RenderObject* obj = &__zencore_context__.render_objects[i];
-        if (!obj->enabled || obj->vertex_count == 0 || __zencore_context__.vk_context.shaders[obj->shader].pipline == NULL)
+        if (!obj->enabled || obj->vertex_count == 0)
             continue;
 
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, __zencore_context__.vk_context.shaders[obj->shader].pipline->graphics_pipeline);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, context->graphics_pipelines[context->shaders[obj->shader].pipeline].graphics_pipeline);
         VkBuffer vertex_buffers[] = { context->vertex_buffer };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(cmd, 0, 1, vertex_buffers, offsets);
@@ -78,9 +88,9 @@ int zen_vk_draw_frame(size_t context_index) {
     vkCmdEndRenderPass(cmd);
     vkEndCommandBuffer(cmd);
 
-    VkSemaphore wait_semaphores[] = { surface->image_available_semaphores[current_frame] };
+    VkSemaphore wait_semaphores[] = { info->image_available_semaphores[current_frame] };
     VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    VkSemaphore signal_semaphores[] = { surface->render_finished_semaphores[current_frame] };
+    VkSemaphore signal_semaphores[] = { info->render_finished_semaphores[current_frame] };
 
     VkSubmitInfo submit_info = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -93,7 +103,7 @@ int zen_vk_draw_frame(size_t context_index) {
         .pSignalSemaphores = signal_semaphores,
     };
 
-    if (vkQueueSubmit(context->graphics_queue, 1, &submit_info, surface->in_flight_fences[current_frame]) != VK_SUCCESS) {
+    if (vkQueueSubmit(context->graphics_queue, 1, &submit_info, info->in_flight_fences[current_frame]) != VK_SUCCESS) {
         log_error("Failed to submit draw command buffer.");
         return -1;
     }
@@ -103,14 +113,17 @@ int zen_vk_draw_frame(size_t context_index) {
         .waitSemaphoreCount = 1,
         .pWaitSemaphores = signal_semaphores,
         .swapchainCount = 1,
-        .pSwapchains = &surface->swap_chain,
+        .pSwapchains = &info->swap_chain,
         .pImageIndices = &image_index,
     };
 
     result = vkQueuePresentKHR(context->present_queue, &present_info);
-    if (result != VK_SUCCESS) {
-        log_error("Failed to present swapchain image.");
-        return -1;
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || info->window->event_handler.resized) {
+        info->window->event_handler.resized = false;
+        zen_vk_recreate_swapchain(context_index);
+    } else if (result != VK_SUCCESS) {
+        log_error("Failed to acquire swap chain image.");
+        exit(1);
     }
 
     context->current_frame = (current_frame + 1) % ZEN_MAX_FRAMES_IN_FLIGHT;

@@ -1,5 +1,3 @@
-[] - Finish Vulkan API Abstraction
-[] - Add Controller Input
 [] - Multi-threading Abstraction / Types
 [] - Networking Abstraction
 [] - Audio System ( input and output )

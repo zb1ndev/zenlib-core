@@ -322,14 +322,118 @@ uint32_t zen_vk_find_memory_type(uint32_t typeFilter, VkMemoryPropertyFlags prop
 
 }
 
+int zen_vk_cleanup_swapchain(size_t context_index) {
+
+    ZEN_VulkanSurfaceInfo* info = &__zencore_context__.vk_context.surfaces[context_index];
+
+    for (size_t i = 0; i < info->swap_chain_image_view_count; i++)
+        vkDestroyFramebuffer(__zencore_context__.vk_context.device, info->frame_buffers[i], NULL);
+    free(info->frame_buffers);
+    
+    for (size_t i = 0; i < info->swap_chain_image_view_count; ++i)
+        vkDestroyImageView(__zencore_context__.vk_context.device, info->swap_chain_image_views[i], NULL);
+    free(info->swap_chain_image_views);
+
+    vkDestroySwapchainKHR(__zencore_context__.vk_context.device, info->swap_chain, NULL);
+    info->swap_chain = VK_NULL_HANDLE;
+
+    return 0;
+
+}
+
 int zen_vk_recreate_swapchain(size_t context_index) {
 
-    (void)context_index;
+    ZEN_VulkanSurfaceInfo* info = &__zencore_context__.vk_context.surfaces[context_index];
+    while (info->window->event_handler.minimized) {
+        if (zen_window_should_close(info->window))
+            return -1;
+        if (info->window->event_handler.background_callback != NULL)
+            info->window->event_handler.background_callback(info->window);
+    }
+
+    vkDeviceWaitIdle(__zencore_context__.vk_context.device);
+    zen_vk_cleanup_swapchain(context_index);
+
+    if (zen_vk_create_swap_chain(context_index) < 0) {
+        log_error("Failed to recreate swapchain.");
+        return -1;
+    }
+
+    if (zen_vk_create_image_views(context_index) < 0) {
+        log_error("Failed to recreate image views.");
+        return -1;
+    }
+    
+    if (zen_vk_create_framebuffers(context_index) < 0) {
+        log_error("Failed to recreate frame buffers.");
+        return -1;
+    }
+
     return 0;
 
 }
 
 int zen_vk_resize_vertex_buffer(void) {
+
+    if (!__zencore_context__.vk_context.info.initialized)
+        return -1;
+
+    vkQueueWaitIdle(__zencore_context__.vk_context.present_queue);
+    vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer, NULL);
+    vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory, NULL);
+
+    VkBufferCreateInfo buffer_info = (VkBufferCreateInfo) {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = sizeof(ZEN_Vertex) * zen_get_vertex_count(),
+        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    if (vkCreateBuffer(
+        __zencore_context__.vk_context.device, 
+        &buffer_info, NULL, 
+        &__zencore_context__.vk_context.vertex_buffer
+    ) != VK_SUCCESS) {
+        log_error("Failed to create vertex buffer.");
+        return -1;
+    }
+
+    VkMemoryRequirements mem_requirements;
+    vkGetBufferMemoryRequirements (
+        __zencore_context__.vk_context.device, 
+        __zencore_context__.vk_context.vertex_buffer, 
+        &mem_requirements
+    );
+
+    VkMemoryAllocateInfo alloc_info = (VkMemoryAllocateInfo) {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = mem_requirements.size,
+        .memoryTypeIndex = zen_vk_find_memory_type (
+            mem_requirements.memoryTypeBits, 
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        )
+    };
+
+    if (vkAllocateMemory (
+        __zencore_context__.vk_context.device, 
+        &alloc_info, NULL, 
+        &__zencore_context__.vk_context.vertex_buffer_memory
+    ) != VK_SUCCESS) {
+        log_error("Failed to allocate vertex buffer memory.");
+        return -1;
+    }
+
+    vkBindBufferMemory (
+        __zencore_context__.vk_context.device, 
+        __zencore_context__.vk_context.vertex_buffer, 
+        __zencore_context__.vk_context.vertex_buffer_memory, 
+        0
+    );
+
+    void* data;
+    vkMapMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory, 0, buffer_info.size, 0, &data);
+    memcpy(data, zen_get_vertices(), (size_t)buffer_info.size);
+    vkUnmapMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory);  
 
     return 0;
 
@@ -337,7 +441,19 @@ int zen_vk_resize_vertex_buffer(void) {
 
 int zen_vk_append_graphics_pipeline(size_t shader_index) {
 
-    (void)shader_index;
+    ZEN_RenderPipline* temp = (ZEN_RenderPipline*)realloc (
+        __zencore_context__.vk_context.graphics_pipelines,
+        sizeof(ZEN_RenderPipline) * __zencore_context__.vk_context.shader_count 
+    );
+
+    if (temp == NULL) {
+        log_error("Failed to allocate space for graphics pipeline.");
+        return -1;
+    }
+
+    __zencore_context__.vk_context.graphics_pipelines = temp;
+    zen_vk_create_graphics_pipeline(&__zencore_context__.vk_context.shaders[shader_index]);
+
     return 0;
 
 }

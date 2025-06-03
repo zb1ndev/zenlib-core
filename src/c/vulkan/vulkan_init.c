@@ -2,6 +2,8 @@
 
 int zen_init_vulkan(ZEN_Window* window, uint32_t api_version) {
 
+    __zencore_context__.render_object_last_count = __zencore_context__.render_object_count;
+
     // If the Surfaces array is not initialized, initialize it
     if (__zencore_context__.vk_context.surfaces == NULL) {
         __zencore_context__.vk_context.surfaces = malloc(sizeof(ZEN_VulkanSurfaceInfo) * ZEN_MAX_WINDOWS);
@@ -104,15 +106,7 @@ void zen_destroy_vulkan(bool is_last, size_t context_index) {
 
     free(info->command_buffers);
 
-    for (size_t i = 0; i < info->swap_chain_image_view_count; i++)
-        vkDestroyFramebuffer(__zencore_context__.vk_context.device, info->frame_buffers[i], NULL);
-    free(info->frame_buffers);
-    
-    for (size_t i = 0; i < info->swap_chain_image_view_count; ++i)
-        vkDestroyImageView(__zencore_context__.vk_context.device, info->swap_chain_image_views[i], NULL);
-    free(info->swap_chain_image_views);
-
-    vkDestroySwapchainKHR(__zencore_context__.vk_context.device, info->swap_chain, NULL);
+    zen_vk_cleanup_swapchain(context_index);
     
     free(info->swap_chain_images);
     free(info->present_modes);
@@ -691,7 +685,7 @@ int zen_vk_create_graphics_pipeline(ZEN_Shader* shader) {
         return -1;
     }
     
-    shader->pipline = &__zencore_context__.vk_context.graphics_pipelines[__zencore_context__.vk_context.graphics_pipline_count];
+    shader->pipeline = __zencore_context__.vk_context.graphics_pipline_count;
 
     __zencore_context__.vk_context.graphics_pipline_count++;
     vkDestroyShaderModule(__zencore_context__.vk_context.device, vert_shader_module, NULL);
@@ -771,9 +765,12 @@ int zen_vk_create_vertex_buffer(void) {
     if (__zencore_context__.vk_context.info.initialized)
         return 0;
 
+    uint64_t count = zen_get_vertex_count();
+    if (count == 0) count = 3;
+
     VkBufferCreateInfo buffer_info = (VkBufferCreateInfo) {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = sizeof(ZEN_Vertex) * zen_get_vertex_count(),
+        .size = sizeof(ZEN_Vertex) * count,
         .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };

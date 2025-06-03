@@ -78,6 +78,8 @@
         result->fragment_shader_path = malloc(strlen(shader.fragment_shader_path) + 1);
         strcpy(result->fragment_shader_path, shader.fragment_shader_path);
 
+        if (__zencore_context__.vk_context.info.initialized)
+            zen_vk_append_graphics_pipeline(__zencore_context__.vk_context.shader_count - 1);
         return __zencore_context__.vk_context.shader_count - 1;
 
     }
@@ -119,6 +121,9 @@
         );
 
         __zencore_context__.render_object_count++;
+        if (__zencore_context__.render_object_last_count <= __zencore_context__.render_object_count) 
+            zen_vk_resize_vertex_buffer();
+
         return index;
             
     }
@@ -136,8 +141,8 @@
                 (count - object->index - 1) * sizeof(ZEN_RenderObject)
             );
         }
-        __zencore_context__.render_object_count--;
 
+        __zencore_context__.render_object_count--;
         return 0;
 
     }
@@ -146,7 +151,6 @@
 
         __zencore_context__.render_object_count = 0;
         memset(__zencore_context__.render_objects, 0, __zencore_context__.render_object_capacity * sizeof(ZEN_RenderObject));
-
         return 0;
 
     }

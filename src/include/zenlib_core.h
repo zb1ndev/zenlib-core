@@ -160,6 +160,8 @@
         void (*on_minimize_callback)(void* data);
         void (*on_restore_callback)(void* data);
         bool (*on_close_callback)(void* data);
+
+        void (*background_callback)(void* data);
         
         bool should_close;
         bool minimized, resized;
@@ -207,11 +209,10 @@
     typedef struct ZEN_Shader {
 
         const char* name;
-
         const char* vertex_shader_path;
         const char* fragment_shader_path;
 
-        ZEN_RenderPipline* pipline;
+        size_t pipeline;
 
     } ZEN_Shader;
 
@@ -528,6 +529,7 @@
         VkVertexInputAttributeDescription* zen_vk_get_vertex_attribute_descriptions();
 
         uint32_t zen_vk_find_memory_type(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        int zen_vk_cleanup_swapchain(size_t context_index);
         int zen_vk_recreate_swapchain(size_t context_index);
         int zen_vk_resize_vertex_buffer(void);
         int zen_vk_append_graphics_pipeline(size_t shader_index);

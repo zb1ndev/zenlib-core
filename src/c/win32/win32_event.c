@@ -79,16 +79,24 @@
             } return 0;
             
             case WM_SIZE: {
-                if (wParam == SIZE_MINIMIZED && window->event_handler.on_minimize_callback != NULL)
-                    window->event_handler.on_minimize_callback(window);
-                if (wParam == SIZE_RESTORED && window->event_handler.on_restore_callback != NULL)
-                    window->event_handler.on_restore_callback(window);
+                if (wParam == SIZE_MINIMIZED) {
+                    window->event_handler.minimized = true;
+                    if (window->event_handler.on_minimize_callback != NULL)
+                        window->event_handler.on_minimize_callback(window);
+                }
+                if (wParam == SIZE_RESTORED) {
+                    window->event_handler.minimized = false;
+                    if(window->event_handler.on_restore_callback != NULL)
+                        window->event_handler.on_restore_callback(window);
+                }
             } return 0;
 
             case WM_SIZING:{
                 RECT* rect = (RECT*)lParam;
-                if (window->event_handler.on_resize_callback != NULL)
+                if (window->event_handler.on_resize_callback != NULL) {
+                    window->event_handler.resized = true;
                     window->event_handler.on_resize_callback(window, rect->right - rect->left, rect->bottom - rect->top);
+                }
             } return TRUE;
 
             case WM_DESTROY:{
