@@ -39,14 +39,11 @@
     }
 
     float zen_get_fps(ZEN_Window* window) {
-        
-        (void)window;
-        return .0f;
-
+        return (float)window->frame_rate;
     }
 
     float zen_get_delta_time(ZEN_Window* window) {
-        return window->event_handler.delta_time;
+        return window->delta_time;
     }
 
 #pragma endregion // Renderer

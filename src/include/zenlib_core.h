@@ -60,6 +60,7 @@
     #endif
 
     #include "zstring.h"
+    #include "stopwatch.h"
 
     #include <stdlib.h>
     #include <stdio.h>
@@ -165,7 +166,6 @@
         
         bool should_close;
         bool minimized, resized;
-        float delta_time;
 
     } ZEN_EventHandler;
 
@@ -189,6 +189,12 @@
 
         size_t context_index;
         size_t renderer_context_index;
+
+        double frame_rate, delta_time;
+
+        size_t frame_count;
+        ZEN_Stopwatch frame_timer;
+        double current_frame, last_frame;
 
     } ZEN_Window;
 
