@@ -325,15 +325,19 @@ uint32_t zen_vk_find_memory_type(uint32_t typeFilter, VkMemoryPropertyFlags prop
 int zen_vk_recreate_swapchain(size_t context_index) {
 
     (void)context_index;
-
-    
-
     return 0;
 
 }
 
 int zen_vk_resize_vertex_buffer(void) {
 
+    return 0;
+
+}
+
+int zen_vk_append_graphics_pipeline(size_t shader_index) {
+
+    (void)shader_index;
     return 0;
 
 }

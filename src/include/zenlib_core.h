@@ -39,7 +39,6 @@
     #define log_error(msg) printf("[ERROR] "msg"\n")
     #define log_error_va(msg, ...) printf("[ERROR] "msg"\n", __VA_ARGS__)
 
-
     // Windows
     #if defined(_WIN32) || defined(_WIN64)
         #define ZEN_OS_WINDOWS
@@ -163,6 +162,7 @@
         bool (*on_close_callback)(void* data);
         
         bool should_close;
+        bool minimized, resized;
         float delta_time;
 
     } ZEN_EventHandler;
@@ -229,13 +229,6 @@
         size_t shader;
 
     } ZEN_RenderObject;
-
-    typedef struct ZEN_RenderObjectRef {
-
-        size_t index;
-        ZEN_RenderObject* object;
-
-    } ZEN_RenderObjectRef;
 
     typedef struct ZEN_VulkanSurfaceInfo {
 
@@ -427,34 +420,95 @@
 
     char* zen_read_file_contents(const char* file_path, size_t* file_size);
     
-    /** A function that initializes the given api on the provided window.
-     * @param window The window you want to bind the api to.
-     * @param api The api you want to initialize.
-     * @returns Whether the function has succeded ```0 = success```.
+    /**
+     * Initializes the given renderer API on the specified window.
+     * @param window The window to bind the renderer API to.
+     * @param api The renderer API to initialize.
+     * @returns 0 if successful, otherwise an error code.
      */
     int zen_initialize_renderer(ZEN_Window* window, ZEN_RendererAPI api);
+
+    /**
+     * Destroys the renderer API associated with the specified window.
+     * @param window The window whose renderer API will be destroyed.
+     * @param api The renderer API to destroy.
+     * @returns 0 if successful, otherwise an error code.
+     */
     int zen_destroy_renderer(ZEN_Window* window, ZEN_RendererAPI api);
+
+    /**
+     * Appends a shader to the internal shader list.
+     * @param shader The shader object to add.
+     * @returns The index of the appended shader in the shader list.
+     */
     size_t zen_append_shader(ZEN_Shader shader);
 
-    ZEN_RenderObjectRef zen_append_render_object(ZEN_RenderObject object);
-    int zen_remove_render_object(ZEN_RenderObjectRef object);
+    /**
+     * Appends a render object to the internal render object list.
+     * @param object The render object to add.
+     * @returns The index of the appended render object.
+     */
+    size_t zen_append_render_object(ZEN_RenderObject object);
+
+    /**
+     * Removes a render object from the internal render object list.
+     * @param object Pointer to the render object to remove.
+     * @returns 0 if successful, otherwise an error code.
+     */
+    int zen_remove_render_object(ZEN_RenderObject* object);
+
+    /**
+     * Clears all render objects from the internal render object list.
+     * @returns 0 if successful, otherwise an error code.
+     */
     int zen_clear_render_objects(void);
 
+    /**
+     * Gets the total number of vertices currently managed.
+     * @returns The total vertex count.
+     */
     uint64_t zen_get_vertex_count(void);
+
+    /**
+     * Gets the vertex count for the render object at the given index.
+     * @param index The index of the render object.
+     * @returns The number of vertices for that render object.
+     */
     uint64_t zen_get_vertex_count_at_index(size_t index);
+
+    /**
+     * Gets a pointer to the array of all vertices managed internally.
+     * @returns Pointer to the vertex array.
+     */
     ZEN_Vertex* zen_get_vertices(void);
 
+    /**
+     * Draws a frame on the specified window, submitting all current render objects.
+     * @param window The window to draw the frame on.
+     * @returns 0 if successful, otherwise an error code.
+     */
     int zen_draw_frame(ZEN_Window* window);
+
+    /**
+     * Gets the current frames-per-second (FPS) for the specified window.
+     * @param window The window for which to get the FPS.
+     * @returns The current FPS as a floating point value.
+     */
     float zen_get_fps(ZEN_Window* window);
+
+    /**
+     * Gets the time elapsed between the last two frames (delta time) for the specified window.
+     * @param window The window for which to get the delta time.
+     * @returns The delta time in seconds.
+     */
     float zen_get_delta_time(ZEN_Window* window);
 
     #pragma region Vulkan
 
+        // vulkan_draw.c
         int zen_vk_draw_frame(size_t context_index);
 
-        int zen_init_vulkan(ZEN_Window* window, uint32_t api_version);
-        void zen_destroy_vulkan(bool is_last, size_t context_index);
-
+        // vulkan_utils.c
         const char** zen_vk_get_instance_extensions(size_t* count);
         const char ** zen_vk_get_device_extensions(size_t *count);
 
@@ -476,6 +530,11 @@
         uint32_t zen_vk_find_memory_type(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         int zen_vk_recreate_swapchain(size_t context_index);
         int zen_vk_resize_vertex_buffer(void);
+        int zen_vk_append_graphics_pipeline(size_t shader_index);
+
+        // vulkan_init.c
+        int zen_init_vulkan(ZEN_Window* window, uint32_t api_version);
+        void zen_destroy_vulkan(bool is_last, size_t context_index);
 
         int zen_vk_create_instance(void);
         int zen_vk_create_surface(size_t context_index);
@@ -515,7 +574,6 @@
         #define get_mouse_pressed zen_get_mouse_pressed
 
         #define initialize_renderer zen_initialize_renderer
-
 
     #endif // ZEN_STRIP_PREFIX
 

@@ -1,3 +1,5 @@
-[] - Hook up Vulkan, OpenGL, and DirectX.
-    [NOTE] Not stable untill swapchain is implemented, will crash!
-[] - Make an audio system ( input, output )
+[] - Finish Vulkan API Abstraction
+[] - Add Controller Input
+[] - Multi-threading Abstraction / Types
+[] - Networking Abstraction
+[] - Audio System ( input and output )

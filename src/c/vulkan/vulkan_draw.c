@@ -64,7 +64,6 @@ int zen_vk_draw_frame(size_t context_index) {
     for (size_t i = 0; i < __zencore_context__.render_object_count; i++) {
 
         ZEN_RenderObject* obj = &__zencore_context__.render_objects[i];
-
         if (!obj->enabled || obj->vertex_count == 0 || __zencore_context__.vk_context.shaders[obj->shader].pipline == NULL)
             continue;
 
@@ -72,8 +71,8 @@ int zen_vk_draw_frame(size_t context_index) {
         VkBuffer vertex_buffers[] = { context->vertex_buffer };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(cmd, 0, 1, vertex_buffers, offsets);
-
         vkCmdDraw(cmd, (uint32_t)obj->vertex_count, 1, zen_get_vertex_count_at_index(obj->index), 0);
+    
     }
 
     vkCmdEndRenderPass(cmd);
