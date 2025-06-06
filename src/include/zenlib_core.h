@@ -28,14 +28,12 @@
 
 #if !defined(ZENLIB_CORE_H)
 #define ZENLIB_CORE_H
+    
+    #define CLEAR_TERMINAL "\033[2J\033[H"
 
-    #define ZEN_DEBUG // Remove for Release
-
-    #if defined(ZEN_DEBUG)
-        #define debug_log(msg) printf("[LOG] "msg"\n")
-        #define debug_log_va(msg, ...) printf("[LOG] "msg"\n", __VA_ARGS__)
-    #endif // ZEN_DEBUG
-
+    #define debug_log(msg) printf("[LOG] "msg"\n")
+    #define debug_log_va(msg, ...) printf("[LOG] "msg"\n", __VA_ARGS__)
+ 
     #define log_error(msg) printf("[ERROR] "msg"\n")
     #define log_error_va(msg, ...) printf("[ERROR] "msg"\n", __VA_ARGS__)
 
@@ -60,7 +58,8 @@
     #endif
 
     #include "zstring.h"
-    #include "stopwatch.h"
+    #include "zstopwatch.h"
+    #include "zthreading.h"
 
     #include <stdlib.h>
     #include <stdio.h>
@@ -85,7 +84,7 @@
 
     typedef enum ZEN_RendererAPI {
 
-        ZEN_RAPI_None, ZEN_RAPI_OpenGL, 
+        ZEN_RAPI_None, 
         ZEN_RAPI_Vulkan, ZEN_RAPI_DirectX
 
     } ZEN_RendererAPI;
@@ -198,12 +197,12 @@
 
     } ZEN_Window;
 
-    typedef struct ZEN_RenderPipline {
+    typedef struct ZEN_VulkanRenderPipline {
 
         VkPipeline graphics_pipeline;
         VkPipelineLayout pipeline_layout;
     
-    } ZEN_RenderPipline;
+    } ZEN_VulkanRenderPipline;
 
     typedef struct ZEN_Vertex {
         
@@ -300,15 +299,27 @@
         VkCommandPool command_pool;
 
         size_t graphics_pipline_count;
-        ZEN_RenderPipline* graphics_pipelines;
+        ZEN_VulkanRenderPipline* graphics_pipelines;
+
+        VkRenderPass render_pass;
+
+    } ZEN_VulkanContext;
+
+    typedef struct ZEN_RendererContext {
 
         size_t shader_count;
         size_t shader_capacity;
         ZEN_Shader* shaders;
         
-        VkRenderPass render_pass;
+        size_t render_object_count;
+        size_t render_object_last_count;
 
-    } ZEN_VulkanContext;
+        size_t render_object_capacity;
+        ZEN_RenderObject* render_objects;
+
+        vec4 clear_color;
+
+    } ZEN_RendererContext; 
 
     #if defined(ZEN_OS_WINDOWS)
     
@@ -323,13 +334,8 @@
             size_t window_count;
 
             ZEN_VulkanContext vk_context;
-
-            size_t render_object_count;
-            size_t render_object_last_count;
-
-            size_t render_object_capacity;
-            ZEN_RenderObject* render_objects;
-
+            ZEN_RendererContext renderer_context;
+        
         } ZEN_CoreContext;
         extern ZEN_CoreContext __zencore_context__;
 
@@ -425,6 +431,11 @@
      */
     bool zen_get_mouse_pressed(ZEN_Window* window, size_t button);
 
+    /** A function that reads the contents of the specified file.
+     * @param file_path The path to the file you want to read.
+     * @param file_size A pointer to a ```size_t``` that will be set to the size of the file.
+     * @returns The contents of the file as a ```char*```.
+     */
     char* zen_read_file_contents(const char* file_path, size_t* file_size);
     
     /**
@@ -442,6 +453,8 @@
      * @returns 0 if successful, otherwise an error code.
      */
     int zen_destroy_renderer(ZEN_Window* window, ZEN_RendererAPI api);
+
+    void zen_set_clear_color(vec4 color);
 
     /**
      * Appends a shader to the internal shader list.
@@ -509,6 +522,7 @@
      * @returns The delta time in seconds.
      */
     float zen_get_delta_time(ZEN_Window* window);
+
 
     #pragma region Vulkan
 

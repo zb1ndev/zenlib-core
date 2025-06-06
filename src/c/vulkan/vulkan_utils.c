@@ -441,9 +441,9 @@ int zen_vk_resize_vertex_buffer(void) {
 
 int zen_vk_append_graphics_pipeline(size_t shader_index) {
 
-    ZEN_RenderPipline* temp = (ZEN_RenderPipline*)realloc (
+    ZEN_VulkanRenderPipline* temp = (ZEN_VulkanRenderPipline*)realloc (
         __zencore_context__.vk_context.graphics_pipelines,
-        sizeof(ZEN_RenderPipline) * __zencore_context__.vk_context.shader_count 
+        sizeof(ZEN_VulkanRenderPipline) * __zencore_context__.renderer_context.shader_count 
     );
 
     if (temp == NULL) {
@@ -452,7 +452,7 @@ int zen_vk_append_graphics_pipeline(size_t shader_index) {
     }
 
     __zencore_context__.vk_context.graphics_pipelines = temp;
-    zen_vk_create_graphics_pipeline(&__zencore_context__.vk_context.shaders[shader_index]);
+    zen_vk_create_graphics_pipeline(&__zencore_context__.renderer_context.shaders[shader_index]);
 
     return 0;
 

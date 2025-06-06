@@ -5,6 +5,7 @@ int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
+    zen_set_clear_color((vec4){0.1f,0.1f,0.1f,1.0f});
     size_t default_shader = zen_append_shader((ZEN_Shader) {
         .name = "default",
         .vertex_shader_path = "./examples/vulkan/shaders/compiled/vert.spv",
@@ -17,10 +18,8 @@ int main(int argc, char** argv) {
         
         if (zen_get_key_down(window, Z_KEY_Escape))
             break;
-        
         zen_draw_frame(window);
-        printf("FPS : %f\nDelta Time : %f\n", zen_get_fps(window), zen_get_delta_time(window));
-
+    
     }
     
     zen_destroy_window(window);

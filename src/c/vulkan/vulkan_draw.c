@@ -64,7 +64,12 @@ int zen_vk_draw_frame(size_t context_index) {
         .framebuffer = info->frame_buffers[image_index],
         .renderArea = { {0, 0}, info->swap_chain_extent },
         .clearValueCount = 1,
-        .pClearValues = (VkClearValue[]){{.color = {{0.0f, 0.0f, 0.0f, 1.0f}}}},
+        .pClearValues = (VkClearValue[]){{.color = {{
+            __zencore_context__.renderer_context.clear_color[0], 
+            __zencore_context__.renderer_context.clear_color[1], 
+            __zencore_context__.renderer_context.clear_color[2], 
+            __zencore_context__.renderer_context.clear_color[3]
+        }}}},
     };
 
     vkCmdBeginRenderPass(cmd, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
@@ -85,13 +90,13 @@ int zen_vk_draw_frame(size_t context_index) {
     };
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-    for (size_t i = 0; i < __zencore_context__.render_object_count; i++) {
+    for (size_t i = 0; i < __zencore_context__.renderer_context.render_object_count; i++) {
 
-        ZEN_RenderObject* obj = &__zencore_context__.render_objects[i];
+        ZEN_RenderObject* obj = &__zencore_context__.renderer_context.render_objects[i];
         if (!obj->enabled || obj->vertex_count == 0)
             continue;
 
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, context->graphics_pipelines[context->shaders[obj->shader].pipeline].graphics_pipeline);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, context->graphics_pipelines[__zencore_context__.renderer_context.shaders[obj->shader].pipeline].graphics_pipeline);
         VkBuffer vertex_buffers[] = { context->vertex_buffer };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(cmd, 0, 1, vertex_buffers, offsets);

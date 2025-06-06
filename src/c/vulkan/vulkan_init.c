@@ -2,7 +2,7 @@
 
 int zen_init_vulkan(ZEN_Window* window, uint32_t api_version) {
 
-    __zencore_context__.render_object_last_count = __zencore_context__.render_object_count;
+    __zencore_context__.renderer_context.render_object_last_count = __zencore_context__.renderer_context.render_object_count;
 
     // If the Surfaces array is not initialized, initialize it
     if (__zencore_context__.vk_context.surfaces == NULL) {
@@ -133,7 +133,7 @@ void zen_destroy_vulkan(bool is_last, size_t context_index) {
         }
 
         free(__zencore_context__.vk_context.graphics_pipelines);
-        free(__zencore_context__.vk_context.shaders);
+        free(__zencore_context__.renderer_context.shaders);
 
         vkDestroyRenderPass(__zencore_context__.vk_context.device, __zencore_context__.vk_context.render_pass, NULL);
         vkDestroyCommandPool(__zencore_context__.vk_context.device, __zencore_context__.vk_context.command_pool, NULL);
@@ -509,14 +509,14 @@ int zen_vk_create_graphics_pipelines(void) {
     if (__zencore_context__.vk_context.info.initialized)
         return 0;
 
-    __zencore_context__.vk_context.graphics_pipelines = malloc(__zencore_context__.vk_context.shader_count * sizeof(ZEN_RenderPipline));
+    __zencore_context__.vk_context.graphics_pipelines = malloc(__zencore_context__.renderer_context.shader_count * sizeof(ZEN_VulkanRenderPipline));
     if (__zencore_context__.vk_context.graphics_pipelines == NULL) {
         log_error("Failed to allocate space for piplines.");
         return -1;
     }
 
-    for (size_t i = 0; i < __zencore_context__.vk_context.shader_count; i++)
-        if (zen_vk_create_graphics_pipeline(&__zencore_context__.vk_context.shaders[i]) < 0)
+    for (size_t i = 0; i < __zencore_context__.renderer_context.shader_count; i++)
+        if (zen_vk_create_graphics_pipeline(&__zencore_context__.renderer_context.shaders[i]) < 0)
             return -1;
     return 0;
 
@@ -524,7 +524,7 @@ int zen_vk_create_graphics_pipelines(void) {
 
 int zen_vk_create_graphics_pipeline(ZEN_Shader* shader) {
 
-    ZEN_RenderPipline* pipline = &__zencore_context__.vk_context.graphics_pipelines[__zencore_context__.vk_context.graphics_pipline_count];
+    ZEN_VulkanRenderPipline* pipline = &__zencore_context__.vk_context.graphics_pipelines[__zencore_context__.vk_context.graphics_pipline_count];
     
     // const char* fragment_shader_path = "./examples/vulkan/shaders/compiled/frag.spv";
     // const char* vertex_shader_path = "./examples/vulkan/shaders/compiled/vert.spv";
