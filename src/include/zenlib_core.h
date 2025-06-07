@@ -350,180 +350,254 @@
 
     #endif // ZEN_OS_WINDOWS
 
-    /** A function that creates a window.
-     * @param title The title of the window.
-     * @param width The width of the window.
-     * @param height The height of the window.
-     * @returns A reference to the window.
-     */
-    ZEN_Window* zen_create_window(const char* title, size_t width, size_t height, ZEN_RendererAPI api); 
-    
-    /** A function that determines if a window should close.
-     * @param window The window you want to watch.
-     * @returns If said window should close.
-     */
-    bool zen_window_should_close(ZEN_Window* window);
-    
-    /** A function that destoys a window.
-     * @param window The window you want to destroy.
-     */
-    void zen_destroy_window(ZEN_Window* window);
+    #pragma region Window Management
 
-    #if defined(ZEN_OS_WINDOWS)
-
-        LRESULT CALLBACK ZEN_WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+        /** A function that creates a window.
+         * @param title The title of the window.
+         * @param width The width of the window.
+         * @param height The height of the window.
+         * @returns A reference to the window.
+         */
+        ZEN_Window* zen_create_window(const char* title, size_t width, size_t height, ZEN_RendererAPI api); 
         
-        /** A function that updates a window's event handler key states.
-         * @param window The window you want to update.
-         * @param code The key you want to update.
-         * @param value Whether the key is up or down
+        /** A function that determines if a window should close.
+         * @param window The window you want to watch.
+         * @returns If said window should close.
          */
-        void zen_update_key_states(ZEN_Window* window, UINT code, bool value);
-
-        /** A function that sets a window's event handler key state to a value.
-         * @param window The window you want to update.
-         * @param index The key you want to update in the key state array.
-         * @param value Whether the key is up or down
+        bool zen_window_should_close(ZEN_Window* window);
+        
+        /** A function that destoys a window.
+         * @param window The window you want to destroy.
          */
-        void zen_set_key_state(ZEN_Window* window, int index, bool value);
+        void zen_destroy_window(ZEN_Window* window);
 
-    #endif // ZEN_OS_WINDOWS
+        /** Minimizes the specified window.
+         * @param window The window to minimize.
+         */
+        void zen_minimize_window(ZEN_Window* window);
+        
+        /** Restores the specified window from minimized or maximized state.
+         * @param window The window to restore.
+         */
+        void zen_restore_window(ZEN_Window* window);
+        
+        /** Maximizes the specified window.
+         * @param window The window to maximize.
+         */
+        void zen_maximize_window(ZEN_Window* window);
+        
+        /** Sets the title of the specified window.
+         * @param window The window whose title to set.
+         * @param title The new title for the window.
+         */
+        void zen_set_window_title(ZEN_Window* window, const char* title);
+        
+        /** Sets the icon of the specified window.
+         * @param window The window whose icon to set.
+         * @param path The file path to the icon image.
+         */
+        void zen_set_window_icon(ZEN_Window* window, const char* path);
+        
+        /** Resizes the specified window to the given dimensions.
+         * @param window The window to resize.
+         * @param width The new width of the window.
+         * @param height The new height of the window.
+         */
+        void zen_set_window_size(ZEN_Window* window, size_t width, size_t height);
+        
+        /** A function that gets the specified window's position.
+         * @param window The window you want to check.
+         * @returns The position stored in an array, ```[0]``` is X, ```[1]``` is Y.
+         */
+        size_t* zen_get_window_position(ZEN_Window* window);
 
-    /** A function that gets whether a key is released on the specified window.
-     * @param window The window you want to check.
-     * @param code The key you want to check for.
-     * @returns Whether the key has been released.
-     */
-    bool zen_get_key_up(ZEN_Window* window, ZEN_KeyCode code);
-    
-    /** A function that gets whether a key is pressed on the specified window.
-     * @param window The window you want to check.
-     * @param code The key you want to check for.
-     * @returns Whether the key has been pressed.
-     */
-    bool zen_get_key_down(ZEN_Window* window, ZEN_KeyCode code);
-    
-    /** A function that gets whether a key is being pressed on the specified window.
-     * @param window The window you want to check.
-     * @param code The key you want to check for.
-     * @returns Whether the key is pressed.
-     */
-    bool zen_get_key_pressed(ZEN_Window* window, ZEN_KeyCode code);
+        /** A function that gets the specified window's size.
+         * @param window The window you want to check.
+         * @returns The position stored in an array, ```[0]``` is Width, ```[1]``` is Height.
+         */
+        size_t* zen_get_window_size(ZEN_Window* window);
 
-    /** A function that gets whether a mouse button has been released on the specified window.
-     * @param window The window you want to check.
-     * @param button ```0``` for LMB, ```1``` for MMB, ```2``` for RMB.
-     * @returns Whether the button has been released.
-     */
-    bool zen_get_mouse_up(ZEN_Window* window, size_t button);
-    
-    /** A function that gets whether a mouse button has been pressed on the specified window.
-     * @param window The window you want to check.
-     * @param button ```0``` for LMB, ```1``` for MMB, ```2``` for RMB.
-     * @returns Whether the button has been pressed.
-     */
-    bool zen_get_mouse_down(ZEN_Window* window, size_t button);
-    
-    /** A function that gets whether a mouse button is being pressed on the specified window.
-     * @param window The window you want to check.
-     * @param button ```0``` for LMB, ```1``` for MMB, ```2``` for RMB.
-     * @returns Whether the button is pressed.
-     */
-    bool zen_get_mouse_pressed(ZEN_Window* window, size_t button);
+        /** Sets the position of the specified window on the screen.
+         * @param window The window to move.
+         * @param x The new x-coordinate of the window.
+         * @param y The new y-coordinate of the window.
+         */
+        void zen_set_window_position(ZEN_Window* window, size_t x, size_t y, bool on_top);
+        
+        /** Sets whether the specified window is focused.
+         * @param window The window to focus or unfocus.
+         * @param focused True to focus the window, false to unfocus.
+         */
+        void zen_set_window_focused(ZEN_Window* window, bool on_top);
 
-    /** A function that reads the contents of the specified file.
-     * @param file_path The path to the file you want to read.
-     * @param file_size A pointer to a ```size_t``` that will be set to the size of the file.
-     * @returns The contents of the file as a ```char*```.
-     */
-    char* zen_read_file_contents(const char* file_path, size_t* file_size);
-    
-    /**
-     * Initializes the given renderer API on the specified window.
-     * @param window The window to bind the renderer API to.
-     * @param api The renderer API to initialize.
-     * @returns 0 if successful, otherwise an error code.
-     */
-    int zen_initialize_renderer(ZEN_Window* window, ZEN_RendererAPI api);
+    #pragma endregion // Window Management
+    #pragma region Event System
 
-    /**
-     * Destroys the renderer API associated with the specified window.
-     * @param window The window whose renderer API will be destroyed.
-     * @param api The renderer API to destroy.
-     * @returns 0 if successful, otherwise an error code.
-     */
-    int zen_destroy_renderer(ZEN_Window* window, ZEN_RendererAPI api);
+        #if defined(ZEN_OS_WINDOWS)
 
-    void zen_set_clear_color(vec4 color);
+            LRESULT CALLBACK ZEN_WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+            
+            /** A function that updates a window's event handler key states.
+             * @param window The window you want to update.
+             * @param code The key you want to update.
+             * @param value Whether the key is up or down
+             */
+            void zen_update_key_states(ZEN_Window* window, UINT code, bool value);
 
-    /**
-     * Appends a shader to the internal shader list.
-     * @param shader The shader object to add.
-     * @returns The index of the appended shader in the shader list.
-     */
-    size_t zen_append_shader(ZEN_Shader shader);
+            /** A function that sets a window's event handler key state to a value.
+             * @param window The window you want to update.
+             * @param index The key you want to update in the key state array.
+             * @param value Whether the key is up or down
+             */
+            void zen_set_key_state(ZEN_Window* window, int index, bool value);
 
-    /**
-     * Appends a render object to the internal render object list.
-     * @param object The render object to add.
-     * @returns The index of the appended render object.
-     */
-    size_t zen_append_render_object(ZEN_RenderObject object);
+        #endif // ZEN_OS_WINDOWS
 
-    /**
-     * Removes a render object from the internal render object list.
-     * @param object Pointer to the render object to remove.
-     * @returns 0 if successful, otherwise an error code.
-     */
-    int zen_remove_render_object(ZEN_RenderObject* object);
+        /** A function that gets whether a key is released on the specified window.
+         * @param window The window you want to check.
+         * @param code The key you want to check for.
+         * @returns Whether the key has been released.
+         */
+        bool zen_get_key_up(ZEN_Window* window, ZEN_KeyCode code);
+        
+        /** A function that gets whether a key is pressed on the specified window.
+         * @param window The window you want to check.
+         * @param code The key you want to check for.
+         * @returns Whether the key has been pressed.
+         */
+        bool zen_get_key_down(ZEN_Window* window, ZEN_KeyCode code);
+        
+        /** A function that gets whether a key is being pressed on the specified window.
+         * @param window The window you want to check.
+         * @param code The key you want to check for.
+         * @returns Whether the key is pressed.
+         */
+        bool zen_get_key_pressed(ZEN_Window* window, ZEN_KeyCode code);
 
-    /**
-     * Clears all render objects from the internal render object list.
-     * @returns 0 if successful, otherwise an error code.
-     */
-    int zen_clear_render_objects(void);
+        /** A function that gets whether a mouse button has been released on the specified window.
+         * @param window The window you want to check.
+         * @param button ```0``` for LMB, ```1``` for MMB, ```2``` for RMB.
+         * @returns Whether the button has been released.
+         */
+        bool zen_get_mouse_up(ZEN_Window* window, size_t button);
+        
+        /** A function that gets whether a mouse button has been pressed on the specified window.
+         * @param window The window you want to check.
+         * @param button ```0``` for LMB, ```1``` for MMB, ```2``` for RMB.
+         * @returns Whether the button has been pressed.
+         */
+        bool zen_get_mouse_down(ZEN_Window* window, size_t button);
+        
+        /** A function that gets whether a mouse button is being pressed on the specified window.
+         * @param window The window you want to check.
+         * @param button ```0``` for LMB, ```1``` for MMB, ```2``` for RMB.
+         * @returns Whether the button is pressed.
+         */
+        bool zen_get_mouse_pressed(ZEN_Window* window, size_t button);
 
-    /**
-     * Gets the total number of vertices currently managed.
-     * @returns The total vertex count.
-     */
-    uint64_t zen_get_vertex_count(void);
+    #pragma endregion // Event System
+    #pragma region File System
 
-    /**
-     * Gets the vertex count for the render object at the given index.
-     * @param index The index of the render object.
-     * @returns The number of vertices for that render object.
-     */
-    uint64_t zen_get_vertex_count_at_index(size_t index);
+        /** A function that reads the contents of the specified file.
+         * @param file_path The path to the file you want to read.
+         * @param file_size A pointer to a ```size_t``` that will be set to the size of the file.
+         * @returns The contents of the file as a ```char*```.
+         */
+        char* zen_read_file_contents(const char* file_path, size_t* file_size);
 
-    /**
-     * Gets a pointer to the array of all vertices managed internally.
-     * @returns Pointer to the vertex array.
-     */
-    ZEN_Vertex* zen_get_vertices(void);
+    #pragma endregion // File System
+    #pragma region Rendering
 
-    /**
-     * Draws a frame on the specified window, submitting all current render objects.
-     * @param window The window to draw the frame on.
-     * @returns 0 if successful, otherwise an error code.
-     */
-    int zen_draw_frame(ZEN_Window* window);
+        /**
+         * Initializes the given renderer API on the specified window.
+         * @param window The window to bind the renderer API to.
+         * @param api The renderer API to initialize.
+         * @returns 0 if successful, otherwise an error code.
+         */
+        int zen_initialize_renderer(ZEN_Window* window, ZEN_RendererAPI api);
 
-    /**
-     * Gets the current frames-per-second (FPS) for the specified window.
-     * @param window The window for which to get the FPS.
-     * @returns The current FPS as a floating point value.
-     */
-    float zen_get_fps(ZEN_Window* window);
+        /**
+         * Destroys the renderer API associated with the specified window.
+         * @param window The window whose renderer API will be destroyed.
+         * @param api The renderer API to destroy.
+         * @returns 0 if successful, otherwise an error code.
+         */
+        int zen_destroy_renderer(ZEN_Window* window, ZEN_RendererAPI api);
 
-    /**
-     * Gets the time elapsed between the last two frames (delta time) for the specified window.
-     * @param window The window for which to get the delta time.
-     * @returns The delta time in seconds.
-     */
-    float zen_get_delta_time(ZEN_Window* window);
+        /**
+         * Sets the clear color.
+         * @param color The color you wish to set the clear color to.
+         */
+        void zen_set_clear_color(vec4 color);
 
+        /**
+         * Appends a shader to the internal shader list.
+         * @param shader The shader object to add.
+         * @returns The index of the appended shader in the shader list.
+         */
+        size_t zen_append_shader(ZEN_Shader shader);
 
+        /**
+         * Appends a render object to the internal render object list.
+         * @param object The render object to add.
+         * @returns The index of the appended render object.
+         */
+        size_t zen_append_render_object(ZEN_RenderObject object);
+
+        /**
+         * Removes a render object from the internal render object list.
+         * @param object Pointer to the render object to remove.
+         * @returns 0 if successful, otherwise an error code.
+         */
+        int zen_remove_render_object(ZEN_RenderObject* object);
+
+        /**
+         * Clears all render objects from the internal render object list.
+         * @returns 0 if successful, otherwise an error code.
+         */
+        int zen_clear_render_objects(void);
+
+        /**
+         * Gets the total number of vertices currently managed.
+         * @returns The total vertex count.
+         */
+        uint64_t zen_get_vertex_count(void);
+
+        /**
+         * Gets the vertex count for the render object at the given index.
+         * @param index The index of the render object.
+         * @returns The number of vertices for that render object.
+         */
+        uint64_t zen_get_vertex_count_at_index(size_t index);
+
+        /**
+         * Gets a pointer to the array of all vertices managed internally.
+         * @returns Pointer to the vertex array.
+         */
+        ZEN_Vertex* zen_get_vertices(void);
+
+        /**
+         * Draws a frame on the specified window, submitting all current render objects.
+         * @param window The window to draw the frame on.
+         * @returns 0 if successful, otherwise an error code.
+         */
+        int zen_draw_frame(ZEN_Window* window);
+
+        /**
+         * Gets the current frames-per-second (FPS) for the specified window.
+         * @param window The window for which to get the FPS.
+         * @returns The current FPS as a floating point value.
+         */
+        float zen_get_fps(ZEN_Window* window);
+
+        /**
+         * Gets the time elapsed between the last two frames (delta time) for the specified window.
+         * @param window The window for which to get the delta time.
+         * @returns The delta time in seconds.
+         */
+        float zen_get_delta_time(ZEN_Window* window);
+
+    #pragma endregion // Rendering
     #pragma region Vulkan
 
         // vulkan_draw.c

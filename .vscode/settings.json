@@ -61,6 +61,8 @@
         "cinttypes": "c",
         "typeinfo": "c",
         "variant": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "zen_renderer.h": "c",
+        "zen_vulkan.h": "c"
     }
 }

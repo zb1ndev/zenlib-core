@@ -381,6 +381,7 @@ int zen_vk_resize_vertex_buffer(void) {
     vkQueueWaitIdle(__zencore_context__.vk_context.present_queue);
     vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer, NULL);
     vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory, NULL);
+    __zencore_context__.vk_context.vertex_buffer_memory = VK_NULL_HANDLE;
 
     VkBufferCreateInfo buffer_info = (VkBufferCreateInfo) {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,

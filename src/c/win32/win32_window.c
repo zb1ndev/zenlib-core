@@ -92,4 +92,68 @@
 
     }
 
+    void zen_minimize_window(ZEN_Window* window) { ShowWindow(window->handle, SW_MINIMIZE); }
+    void zen_restore_window(ZEN_Window* window)  { ShowWindow(window->handle, SW_RESTORE);  }
+    void zen_maximize_window(ZEN_Window* window) { ShowWindow(window->handle, SW_MAXIMIZE); }
+
+    void zen_set_window_title(ZEN_Window* window, const char* title) { SetWindowTextA(window->handle, title); }
+    void zen_set_window_icon(ZEN_Window* window, const char* path) { 
+    
+        (void)window;
+        (void)path;
+        
+        log_error("\"zen_set_window_icon\" is not implemented yet.");
+        return;
+    
+    }
+    void zen_set_window_size(ZEN_Window* window, size_t width, size_t height) {
+
+        size_t* position = zen_get_window_position(window);
+        if (position == NULL) return;
+
+        SetWindowPos(window->handle, NULL, position[0], position[1], width, height, SWP_SHOWWINDOW); 
+        free(position);
+
+    }
+
+    size_t* zen_get_window_position(ZEN_Window* window) {
+
+        RECT rect;
+        GetWindowRect(window->handle, &rect);
+        
+        size_t* position = malloc(sizeof(size_t) * 2);
+        if (position == NULL) {
+            log_error("Failed to allocate space for window position.");
+            return NULL;
+        }
+
+        position[0] = rect.left;
+        position[1] = rect.top;
+        
+        return position;
+    
+    }
+    size_t* zen_get_window_size(ZEN_Window* window) {
+        
+        size_t* position = malloc(sizeof(size_t) * 2);
+        if (position == NULL) {
+            log_error("Failed to allocate space for window size.");
+            return NULL;
+        }
+
+        position[0] = window->width;
+        position[1] = window->height;
+        
+        return position;
+    
+    }
+
+    void zen_set_window_position(ZEN_Window* window, size_t x, size_t y, bool on_top) { 
+        SetWindowPos(window->handle, on_top ? HWND_TOPMOST : NULL, x, y, window->width, window->height, SWP_SHOWWINDOW);
+    }
+    void zen_set_window_focused(ZEN_Window* window, bool on_top) { 
+        SetFocus(window->handle);
+        if (on_top) BringWindowToTop(window->handle);
+    }
+
 #endif // ZEN_OS_WINDOWS

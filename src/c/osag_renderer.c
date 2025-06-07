@@ -27,27 +27,52 @@
 
     }
 
-    void zen_set_clear_color(vec4 color) {
-        glm_vec4_dup(color, __zencore_context__.renderer_context.clear_color);
+    void zen_set_clear_color(vec4 color) { 
+        glm_vec4_dup(color, __zencore_context__.renderer_context.clear_color); 
     }
 
     int zen_draw_frame(ZEN_Window* window) {
 
+        // Calculate Delta Time
+        window->current_frame = clock();
+        window->delta_time = (double)(window->current_frame - window->last_frame) / CLOCKS_PER_SEC;
+
+        // Calculate Frame Rate
+        if (zen_stopwatch_elapsed_seconds(&window->frame_timer) >= 1) {
+            zen_stopwatch_stop(&window->frame_timer);
+            window->frame_rate = window->frame_count;
+            window->frame_count = 0;
+        }
+
+        // Start Timing Frame
+        if (window->frame_count == 0)
+            zen_stopwatch_start(&window->frame_timer);
+
+
+        // Draw Frame ( includes resizing vertex buffer )
         if (window == NULL) return -1;
-        if (window->api == ZEN_RAPI_Vulkan)
+        if (window->api == ZEN_RAPI_Vulkan) {
+            if (__zencore_context__.renderer_context.render_object_last_count <= __zencore_context__.renderer_context.render_object_count && 
+            __zencore_context__.renderer_context.render_object_count > 0) {
+                __zencore_context__.renderer_context.render_object_last_count = __zencore_context__.renderer_context.render_object_count;
+                zen_vk_resize_vertex_buffer();
+            }
             if (zen_vk_draw_frame(window->renderer_context_index) < 0)
                 return -1;
-        
+        }
+
+        window->frame_count++;
+        window->last_frame = window->current_frame;
         return 0;
 
     }
 
-    float zen_get_fps(ZEN_Window* window) {
-        return (float)window->frame_rate;
+    float zen_get_fps(ZEN_Window* window) { 
+        return (float)window->frame_rate; 
     }
 
-    float zen_get_delta_time(ZEN_Window* window) {
-        return window->delta_time;
+    float zen_get_delta_time(ZEN_Window* window) { 
+        return window->delta_time; 
     }
 
 #pragma endregion // Renderer
@@ -125,9 +150,6 @@
         );
 
         __zencore_context__.renderer_context.render_object_count++;
-        if (__zencore_context__.renderer_context.render_object_last_count <= __zencore_context__.renderer_context.render_object_count) 
-            zen_vk_resize_vertex_buffer();
-
         return index;
             
     }

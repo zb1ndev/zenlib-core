@@ -5,20 +5,6 @@ int zen_vk_draw_frame(size_t context_index) {
     ZEN_VulkanContext* context = &__zencore_context__.vk_context;
     ZEN_VulkanSurfaceInfo* info = &context->surfaces[context_index];
     size_t current_frame = context->current_frame;
-
-    // Calculate Delta Time
-    info->window->current_frame = clock();
-    info->window->delta_time = (double)(info->window->current_frame - info->window->last_frame) / CLOCKS_PER_SEC;
-
-    // Calculate Frame Rate
-    if (zen_stopwatch_elapsed_seconds(&info->window->frame_timer) >= 1) {
-        zen_stopwatch_stop(&info->window->frame_timer);
-        info->window->frame_rate = info->window->frame_count;
-        info->window->frame_count = 0;
-    }
-
-    if (info->window->frame_count == 0)
-        zen_stopwatch_start(&info->window->frame_timer);
     
     vkQueueWaitIdle(__zencore_context__.vk_context.present_queue);
 
@@ -145,8 +131,6 @@ int zen_vk_draw_frame(size_t context_index) {
         exit(1);
     }
 
-    info->window->frame_count++;
-    info->window->last_frame = info->window->current_frame;
     context->current_frame = (current_frame + 1) % ZEN_MAX_FRAMES_IN_FLIGHT;
     return 0;
 

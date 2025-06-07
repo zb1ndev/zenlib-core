@@ -93,10 +93,12 @@
 
             case WM_SIZING:{
                 RECT* rect = (RECT*)lParam;
-                if (window->event_handler.on_resize_callback != NULL) {
-                    window->event_handler.resized = true;
+                if (window->event_handler.on_resize_callback != NULL)
                     window->event_handler.on_resize_callback(window, rect->right - rect->left, rect->bottom - rect->top);
-                }
+                window->event_handler.resized = true;
+                window->width = rect->right - rect->left;
+                window->height = rect->bottom - rect->top;
+
             } return TRUE;
 
             case WM_DESTROY:{
