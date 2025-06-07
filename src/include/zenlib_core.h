@@ -538,11 +538,25 @@
         size_t zen_append_shader(ZEN_Shader shader);
 
         /**
+         * Gets a reference to the shader at ```index``` in the internal shader list.
+         * @param index The index where the shader resides.
+         * @returns A reference to the specified shader.
+         */
+        ZEN_Shader* zen_get_shader(size_t index);
+
+        /**
          * Appends a render object to the internal render object list.
          * @param object The render object to add.
          * @returns The index of the appended render object.
          */
         size_t zen_append_render_object(ZEN_RenderObject object);
+
+        /**
+         * Gets a reference to the render object at ```index``` in the internal shader list.
+         * @param index The index where the render object resides.
+         * @returns A reference to the specified render object.
+         */
+        ZEN_RenderObject* zen_get_render_object(size_t index);
 
         /**
          * Removes a render object from the internal render object list.

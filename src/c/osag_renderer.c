@@ -110,6 +110,10 @@
 
     }
 
+    ZEN_Shader* zen_get_shader(size_t index) {
+        return &__zencore_context__.renderer_context.shaders[index];
+    }
+
 #pragma endregion // Shaders
 #pragma region Render Objects
 
@@ -152,6 +156,10 @@
         __zencore_context__.renderer_context.render_object_count++;
         return index;
             
+    }
+
+    ZEN_RenderObject* zen_get_render_object(size_t index) {
+        return &__zencore_context__.renderer_context.render_objects[index];
     }
 
     int zen_remove_render_object(ZEN_RenderObject* object) {
