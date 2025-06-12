@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 set INCLUDE=-IC:\VulkanSDK\1.4.313.0\Include
-set FLAGS=-std=c99 -Wall -Wextra
+set FLAGS=-std=c99 -Wall -Wextra -O2
 
 if not exist build\int mkdir build\int
 del /Q build\int\*.o 2>nul

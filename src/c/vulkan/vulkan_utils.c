@@ -234,7 +234,7 @@ VkSurfaceFormatKHR zen_vk_choose_swap_surface_format(size_t context_index) {
 
 VkPresentModeKHR zen_vk_choose_swap_present_mode(size_t context_index) {
     (void)context_index;
-    return VK_PRESENT_MODE_FIFO_KHR;
+    return VK_PRESENT_MODE_IMMEDIATE_KHR;  // VK_PRESENT_MODE_FIFO_KHR;
 }
 
 VkExtent2D zen_vk_choose_swap_extent(size_t context_index) {
@@ -291,7 +291,7 @@ VkVertexInputBindingDescription zen_vk_get_vertex_binding_description() {
 
 VkVertexInputAttributeDescription* zen_vk_get_vertex_attribute_descriptions() {
 
-    static const VkVertexInputAttributeDescription attribute_descriptions[2] = { 
+    static VkVertexInputAttributeDescription attribute_descriptions[2] = { 
         (VkVertexInputAttributeDescription) {
             .binding = 0,
             .location = 0,
@@ -379,62 +379,7 @@ int zen_vk_resize_vertex_buffer(void) {
         return -1;
 
     vkQueueWaitIdle(__zencore_context__.vk_context.present_queue);
-    vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer, NULL);
-    vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory, NULL);
-    __zencore_context__.vk_context.vertex_buffer_memory = VK_NULL_HANDLE;
-
-    VkBufferCreateInfo buffer_info = (VkBufferCreateInfo) {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = sizeof(ZEN_Vertex) * zen_get_vertex_count(),
-        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
-    };
-
-    if (vkCreateBuffer(
-        __zencore_context__.vk_context.device, 
-        &buffer_info, NULL, 
-        &__zencore_context__.vk_context.vertex_buffer
-    ) != VK_SUCCESS) {
-        log_error("Failed to create vertex buffer.");
-        return -1;
-    }
-
-    VkMemoryRequirements mem_requirements;
-    vkGetBufferMemoryRequirements (
-        __zencore_context__.vk_context.device, 
-        __zencore_context__.vk_context.vertex_buffer, 
-        &mem_requirements
-    );
-
-    VkMemoryAllocateInfo alloc_info = (VkMemoryAllocateInfo) {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .allocationSize = mem_requirements.size,
-        .memoryTypeIndex = zen_vk_find_memory_type (
-            mem_requirements.memoryTypeBits, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-        )
-    };
-
-    if (vkAllocateMemory (
-        __zencore_context__.vk_context.device, 
-        &alloc_info, NULL, 
-        &__zencore_context__.vk_context.vertex_buffer_memory
-    ) != VK_SUCCESS) {
-        log_error("Failed to allocate vertex buffer memory.");
-        return -1;
-    }
-
-    vkBindBufferMemory (
-        __zencore_context__.vk_context.device, 
-        __zencore_context__.vk_context.vertex_buffer, 
-        __zencore_context__.vk_context.vertex_buffer_memory, 
-        0
-    );
-
-    void* data;
-    vkMapMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory, 0, buffer_info.size, 0, &data);
-    memcpy(data, zen_get_vertices(), (size_t)buffer_info.size);
-    vkUnmapMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory);  
+    log_error("\"zen_vk_resize_vertex_buffer\" is not implemented yet.");
 
     return 0;
 
@@ -454,6 +399,86 @@ int zen_vk_append_graphics_pipeline(size_t shader_index) {
 
     __zencore_context__.vk_context.graphics_pipelines = temp;
     zen_vk_create_graphics_pipeline(&__zencore_context__.renderer_context.shaders[shader_index]);
+
+    return 0;
+
+}
+
+int zen_vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer* buffer, VkDeviceMemory* buffer_memory) {
+
+    VkBufferCreateInfo buffer_info = (VkBufferCreateInfo) {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = size,
+        .usage = usage,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+    
+    if (vkCreateBuffer(__zencore_context__.vk_context.device, &buffer_info, NULL, buffer) != VK_SUCCESS) {
+        log_error("Failed to create buffer.");
+        return -1;
+    }
+
+    VkMemoryRequirements mem_requirements;
+    vkGetBufferMemoryRequirements(__zencore_context__.vk_context.device, *buffer, &mem_requirements);
+
+    VkMemoryAllocateInfo alloc_info = (VkMemoryAllocateInfo) {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = mem_requirements.size,
+        .memoryTypeIndex = zen_vk_find_memory_type(mem_requirements.memoryTypeBits, properties)
+    };
+
+    if (vkAllocateMemory(__zencore_context__.vk_context.device, &alloc_info, NULL, buffer_memory) != VK_SUCCESS) {
+        log_error("Failed to allocate buffer memory.");
+        return -1;
+    }
+
+    vkBindBufferMemory(__zencore_context__.vk_context.device, *buffer, *buffer_memory, 0);
+    return 0;
+
+}
+
+int zen_vk_copy_buffer(VkBuffer src_buffer, VkBuffer dest_buffer, VkDeviceSize size) {
+
+    VkCommandBufferAllocateInfo alloc_info = (VkCommandBufferAllocateInfo) {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandPool = __zencore_context__.vk_context.command_pool,
+        .commandBufferCount = 1
+    };
+    
+    VkCommandBuffer command_buffer;
+    vkAllocateCommandBuffers(__zencore_context__.vk_context.device, &alloc_info, &command_buffer);
+
+    VkCommandBufferBeginInfo begin_info = (VkCommandBufferBeginInfo) {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+    };
+    vkBeginCommandBuffer(command_buffer, &begin_info);
+
+    VkBufferCopy copy_region = (VkBufferCopy) {
+        .srcOffset = 0, // Optional
+        .dstOffset = 0, // Optional
+        .size = size
+    };
+    vkCmdCopyBuffer(command_buffer, src_buffer, dest_buffer, 1, &copy_region);
+    vkEndCommandBuffer(command_buffer);
+
+    VkSubmitInfo submit_info = (VkSubmitInfo) {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &command_buffer
+    };
+    
+
+    vkQueueSubmit(__zencore_context__.vk_context.graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(__zencore_context__.vk_context.graphics_queue);
+
+    vkFreeCommandBuffers (
+        __zencore_context__.vk_context.device, 
+        __zencore_context__.vk_context.command_pool, 
+        1, 
+        &command_buffer
+    );
 
     return 0;
 

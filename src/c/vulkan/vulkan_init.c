@@ -69,7 +69,12 @@ int zen_init_vulkan(ZEN_Window* window, uint32_t api_version) {
     }
 
     if (zen_vk_create_vertex_buffer() < 0) {
-        log_error("Failed to create command pool.");
+        log_error("Failed to create vertex buffer.");
+        return -1;
+    }
+
+    if (zen_vk_create_index_buffer() < 0) {
+        log_error("Failed to create index buffer.");
         return -1;
     }
 
@@ -137,6 +142,10 @@ void zen_destroy_vulkan(bool is_last, size_t context_index) {
 
         vkDestroyRenderPass(__zencore_context__.vk_context.device, __zencore_context__.vk_context.render_pass, NULL);
         vkDestroyCommandPool(__zencore_context__.vk_context.device, __zencore_context__.vk_context.command_pool, NULL);
+
+        
+        vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.index_buffer, NULL);
+        vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.index_buffer_memory, NULL);
 
         vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer, NULL);
         vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory, NULL);
@@ -765,61 +774,71 @@ int zen_vk_create_vertex_buffer(void) {
     if (__zencore_context__.vk_context.info.initialized)
         return 0;
 
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
     uint64_t count = zen_get_vertex_count();
-    if (count == 0) count = 3;
+    if (count == 0)
+        count = 3;
+    uint64_t size = sizeof(ZEN_Vertex) * count;
 
-    VkBufferCreateInfo buffer_info = (VkBufferCreateInfo) {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = sizeof(ZEN_Vertex) * count,
-        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
-    };
-
-    if (vkCreateBuffer(
-        __zencore_context__.vk_context.device, 
-        &buffer_info, NULL, 
-        &__zencore_context__.vk_context.vertex_buffer
-    ) != VK_SUCCESS) {
-        log_error("Failed to create vertex buffer.");
-        return -1;
-    }
-
-    VkMemoryRequirements mem_requirements;
-    vkGetBufferMemoryRequirements (
-        __zencore_context__.vk_context.device, 
-        __zencore_context__.vk_context.vertex_buffer, 
-        &mem_requirements
-    );
-
-    VkMemoryAllocateInfo alloc_info = (VkMemoryAllocateInfo) {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .allocationSize = mem_requirements.size,
-        .memoryTypeIndex = zen_vk_find_memory_type (
-            mem_requirements.memoryTypeBits, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-        )
-    };
-
-    if (vkAllocateMemory (
-        __zencore_context__.vk_context.device, 
-        &alloc_info, NULL, 
-        &__zencore_context__.vk_context.vertex_buffer_memory
-    ) != VK_SUCCESS) {
-        log_error("Failed to allocate vertex buffer memory.");
-        return -1;
-    }
-
-    vkBindBufferMemory (
-        __zencore_context__.vk_context.device, 
-        __zencore_context__.vk_context.vertex_buffer, 
-        __zencore_context__.vk_context.vertex_buffer_memory, 
-        0
+    zen_vk_create_buffer (size, 
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+        &staging_buffer, 
+        &staging_buffer_memory
     );
 
     void* data;
-    vkMapMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory, 0, buffer_info.size, 0, &data);
-    memcpy(data, zen_get_vertices(), (size_t)buffer_info.size);
-    vkUnmapMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory);  
+    vkMapMemory(__zencore_context__.vk_context.device, staging_buffer_memory, 0, size, 0, &data);
+        memcpy(data, zen_get_vertices(), (size_t)size);
+    vkUnmapMemory(__zencore_context__.vk_context.device, staging_buffer_memory);
+
+    zen_vk_create_buffer (
+        size, 
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+        &__zencore_context__.vk_context.vertex_buffer, 
+        &__zencore_context__.vk_context.vertex_buffer_memory
+    );
+
+    zen_vk_copy_buffer(staging_buffer, __zencore_context__.vk_context.vertex_buffer, size);
+    vkDestroyBuffer(__zencore_context__.vk_context.device, staging_buffer, NULL);
+    vkFreeMemory(__zencore_context__.vk_context.device, staging_buffer_memory, NULL);
+
+    return 0;
+
+}
+
+int zen_vk_create_index_buffer(void) {
+
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+    VkDeviceSize buffer_size = sizeof(uint16_t) * zen_get_index_count();
+
+    zen_vk_create_buffer (
+        buffer_size, 
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+        &staging_buffer, 
+        &staging_buffer_memory
+    );
+
+    void* data;
+    vkMapMemory(__zencore_context__.vk_context.device, staging_buffer_memory, 0, buffer_size, 0, &data);
+        memcpy(data, zen_get_indices(), (size_t)buffer_size);
+    vkUnmapMemory(__zencore_context__.vk_context.device, staging_buffer_memory);
+    
+    zen_vk_create_buffer (
+        buffer_size, 
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+        &__zencore_context__.vk_context.index_buffer, 
+        &__zencore_context__.vk_context.index_buffer_memory
+    );
+    zen_vk_copy_buffer(staging_buffer, __zencore_context__.vk_context.index_buffer, buffer_size);
+
+    vkDestroyBuffer(__zencore_context__.vk_context.device, staging_buffer, NULL);
+    vkFreeMemory(__zencore_context__.vk_context.device, staging_buffer_memory, NULL);
 
     return 0;
 

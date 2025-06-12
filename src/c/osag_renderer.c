@@ -31,7 +31,13 @@
         glm_vec4_dup(color, __zencore_context__.renderer_context.clear_color); 
     }
 
+    void zen_set_view_mode(ZEN_ViewMode mode) {
+        __zencore_context__.renderer_context.view_mode = mode;
+    }
+
     int zen_draw_frame(ZEN_Window* window) {
+
+        ZEN_RendererContext* context = &__zencore_context__.renderer_context;
 
         // Calculate Delta Time
         window->current_frame = clock();
@@ -48,13 +54,11 @@
         if (window->frame_count == 0)
             zen_stopwatch_start(&window->frame_timer);
 
-
         // Draw Frame ( includes resizing vertex buffer )
         if (window == NULL) return -1;
         if (window->api == ZEN_RAPI_Vulkan) {
-            if (__zencore_context__.renderer_context.render_object_last_count <= __zencore_context__.renderer_context.render_object_count && 
-            __zencore_context__.renderer_context.render_object_count > 0) {
-                __zencore_context__.renderer_context.render_object_last_count = __zencore_context__.renderer_context.render_object_count;
+            if (context->render_object_last_count < context->render_object_count && context->render_object_count > 0) {
+                context->render_object_last_count = context->render_object_count;
                 zen_vk_resize_vertex_buffer();
             }
             if (zen_vk_draw_frame(window->renderer_context_index) < 0)
@@ -153,6 +157,17 @@
             object.vertices, sizeof(ZEN_Vertex) * object.vertex_count
         );
 
+        __zencore_context__.renderer_context.render_objects[__zencore_context__.renderer_context.render_object_count].indices = malloc(sizeof(ZEN_Vertex) * object.index_count);
+        if (__zencore_context__.renderer_context.render_objects[__zencore_context__.renderer_context.render_object_count].indices == NULL) {
+            log_error("Failed to allocate space for verticies.");
+            return SIZE_MAX;
+        }
+
+        memcpy (
+            __zencore_context__.renderer_context.render_objects[__zencore_context__.renderer_context.render_object_count].indices,
+            object.indices, sizeof(uint16_t) * object.index_count
+        );
+
         __zencore_context__.renderer_context.render_object_count++;
         return index;
             
@@ -238,3 +253,48 @@
     }
 
 #pragma endregion // Vertices
+#pragma region Indices
+
+    uint64_t zen_get_index_count(void)  {
+        
+        uint64_t result = 0;
+        for (size_t i = 0; i < __zencore_context__.renderer_context.render_object_count; i++)
+            result += __zencore_context__.renderer_context.render_objects[i].index_count;
+        return result;
+
+    }
+
+    uint64_t zen_get_index_count_at_index(size_t index) {
+
+        if (index > __zencore_context__.renderer_context.render_object_count) {
+            log_error("Index is out of range at function \"zen_get_vertex_count_at_index\".");
+            return 0;
+        }
+
+        uint64_t result = 0;
+        for (size_t i = 0; i < index; i++)
+            result += __zencore_context__.renderer_context.render_objects[i].index_count;
+        return result;
+
+    }
+
+    uint16_t* zen_get_indices() {
+
+        uint16_t* result = malloc(sizeof(uint16_t) * zen_get_index_count());
+        if (result == NULL) {
+            log_error("Failed to allocate space for indices.");
+            return NULL;
+        }
+
+        size_t result_index = 0;
+        for (size_t o = 0; o < __zencore_context__.renderer_context.render_object_count; o++) {
+            for (size_t i = 0; i < __zencore_context__.renderer_context.render_objects[o].index_count; i++) {
+                result[result_index++] = __zencore_context__.renderer_context.render_objects[o].indices[i];
+            }
+        }
+        
+        return result;
+
+    }
+
+#pragma endregion // Indices

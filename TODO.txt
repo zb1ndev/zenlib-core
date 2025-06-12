@@ -1,3 +1,5 @@
+[] - Finish Vertex / Index Buffer
+[] - Uniform Buffer
+[] - Texture Support
+[] - Copy Text Mesh Pro but with a z infront
 [] - Multi-threading Abstraction / Types
-[] - Networking Abstraction
-[] - Audio System ( input and output )

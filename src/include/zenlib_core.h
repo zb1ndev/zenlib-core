@@ -79,8 +79,8 @@
     #define ZEN_VULKAN_VERSION VK_MAKE_VERSION(1,0,0)
     #define ZEN_MAX_WINDOWS 10
     #define ZEN_MAX_FRAMES_IN_FLIGHT 2
-
-    #define zen_vk_offset_of(s, m) (long)(&(((s*)0)->m))
+    
+    #define zen_vk_offset_of(s, m) offsetof(s,m)
 
     typedef enum ZEN_RendererAPI {
 
@@ -213,9 +213,9 @@
 
     typedef struct ZEN_Shader {
 
-        const char* name;
-        const char* vertex_shader_path;
-        const char* fragment_shader_path;
+        char* name;
+        char* vertex_shader_path;
+        char* fragment_shader_path;
 
         size_t pipeline;
 
@@ -230,11 +230,19 @@
         ZEN_Vertex* vertices;
 
         size_t index_count;
-        int* indices;
+        uint16_t* indices;
 
         size_t shader;
 
     } ZEN_RenderObject;
+
+    typedef enum ZEN_ViewMode {
+
+        ZEN_VIEW_MODE_2D, 
+        ZEN_VIEW_MODE_3D_ORTHOGRAPHIC,
+        ZEN_VIEW_MODE_3D_PERSPECTIVE
+    
+    } ZEN_ViewMode;
 
     typedef struct ZEN_VulkanSurfaceInfo {
 
@@ -278,14 +286,17 @@
     typedef struct ZEN_VulkanContext {
         
         ZEN_VulkanInfo info;
+        VkInstance instance;
         size_t current_frame;
 
         size_t surface_count;
         ZEN_VulkanSurfaceInfo* surfaces;
 
-        VkInstance instance;
         VkBuffer vertex_buffer;
         VkDeviceMemory vertex_buffer_memory;
+
+        VkBuffer index_buffer;
+        VkDeviceMemory index_buffer_memory;
 
         VkDevice device;
         VkPhysicalDevice physical_device;
@@ -318,6 +329,7 @@
         ZEN_RenderObject* render_objects;
 
         vec4 clear_color;
+        ZEN_ViewMode view_mode;
 
     } ZEN_RendererContext; 
 
@@ -591,6 +603,31 @@
         ZEN_Vertex* zen_get_vertices(void);
 
         /**
+         * Gets the total number of indices currently managed.
+         * @returns The total index count.
+         */
+        uint64_t zen_get_index_count(void);
+
+        /**
+         * Gets the index count for the render object at the given index.
+         * @param index The index of the render object.
+         * @returns The number of indices for that render object.
+         */
+        uint64_t zen_get_index_count_at_index(size_t index);
+
+        /**
+         * Gets a pointer to the array of all indices managed internally.
+         * @returns Pointer to the index array.
+         */
+        uint16_t* zen_get_indices(void);
+
+        /**
+         * Sets the view mode for the renderer.
+         * @param mode The view mode you want to set it to.
+         */
+        void zen_set_view_mode(ZEN_ViewMode mode);
+
+        /**
          * Draws a frame on the specified window, submitting all current render objects.
          * @param window The window to draw the frame on.
          * @returns 0 if successful, otherwise an error code.
@@ -620,27 +657,24 @@
         // vulkan_utils.c
         const char** zen_vk_get_instance_extensions(size_t* count);
         const char ** zen_vk_get_device_extensions(size_t *count);
-
         bool zen_vk_find_queue_families(VkPhysicalDevice device, size_t context_index);
         bool zen_vk_query_swapchain_support(VkPhysicalDevice device, size_t context_index);
         bool zen_vk_device_has_extensions(VkPhysicalDevice device);
         bool zen_vk_check_device_api_version(VkPhysicalDevice device);
         bool zen_vk_device_is_suitable(VkPhysicalDevice device, size_t context_index);
-
         VkSurfaceFormatKHR zen_vk_choose_swap_surface_format(size_t context_index);
         VkPresentModeKHR zen_vk_choose_swap_present_mode(size_t context_index);
         VkExtent2D zen_vk_choose_swap_extent(size_t context_index);
-
         VkShaderModule zen_vk_create_shader_module(const char* code, size_t code_size);
-
         VkVertexInputBindingDescription zen_vk_get_vertex_binding_description();
         VkVertexInputAttributeDescription* zen_vk_get_vertex_attribute_descriptions();
-
         uint32_t zen_vk_find_memory_type(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         int zen_vk_cleanup_swapchain(size_t context_index);
         int zen_vk_recreate_swapchain(size_t context_index);
         int zen_vk_resize_vertex_buffer(void);
         int zen_vk_append_graphics_pipeline(size_t shader_index);
+        int zen_vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer* buffer, VkDeviceMemory* buffer_memory);
+        int zen_vk_copy_buffer(VkBuffer src_buffer, VkBuffer dest_buffer, VkDeviceSize size);
 
         // vulkan_init.c
         int zen_init_vulkan(ZEN_Window* window, uint32_t api_version);
@@ -658,6 +692,7 @@
         int zen_vk_create_framebuffers(size_t context_index);
         int zen_vk_create_command_pool(void);
         int zen_vk_create_vertex_buffer(void);
+        int zen_vk_create_index_buffer(void);
         int zen_vk_create_command_buffers(size_t context_index);
         int zen_vk_create_sync_objects(size_t context_index);
 

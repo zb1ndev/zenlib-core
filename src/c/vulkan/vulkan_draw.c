@@ -86,7 +86,16 @@ int zen_vk_draw_frame(size_t context_index) {
         VkBuffer vertex_buffers[] = { context->vertex_buffer };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(cmd, 0, 1, vertex_buffers, offsets);
-        vkCmdDraw(cmd, (uint32_t)obj->vertex_count, 1, zen_get_vertex_count_at_index(obj->index), 0);
+        vkCmdBindIndexBuffer(cmd, context->index_buffer, 0, VK_INDEX_TYPE_UINT16);
+        
+        vkCmdDrawIndexed (
+            cmd, 
+            (uint32_t)obj->index_count, 
+            1, 
+            zen_get_index_count_at_index(obj->index), 
+            zen_get_vertex_count_at_index(obj->index), 
+            0
+        );
     
     }
 
