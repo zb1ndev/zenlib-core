@@ -1,5 +1,6 @@
 /build
 /deps
 /examples/vulkan/build
+/examples/vulkan/resources
 /examples/vulkan/shaders/compiled
 /old

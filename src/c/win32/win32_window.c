@@ -96,13 +96,15 @@
     void zen_restore_window(ZEN_Window* window)  { ShowWindow(window->handle, SW_RESTORE);  }
     void zen_maximize_window(ZEN_Window* window) { ShowWindow(window->handle, SW_MAXIMIZE); }
 
-    void zen_set_window_title(ZEN_Window* window, const char* title) { SetWindowTextA(window->handle, title); }
+    void zen_set_window_title(ZEN_Window* window, const char* title) { 
+        SetWindowTextA(window->handle, title); 
+    }
     void zen_set_window_icon(ZEN_Window* window, const char* path) { 
     
-        (void)window;
-        (void)path;
-        
-        log_error("\"zen_set_window_icon\" is not implemented yet.");
+        HICON icon = (HICON)LoadImage(NULL, path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+        SendMessage(window->handle, WM_SETICON, ICON_BIG, (LPARAM)icon);
+        SendMessage(window->handle, WM_SETICON, ICON_SMALL, (LPARAM)icon);
+
         return;
     
     }

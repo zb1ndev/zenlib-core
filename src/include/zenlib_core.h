@@ -73,6 +73,7 @@
     #if defined(ZEN_OS_WINDOWS)
         #include <windows.h>
         #include <windowsx.h>
+        #include <commctrl.h>
         #include <vulkan/vulkan_win32.h>
     #endif // ZEN_OS_WINDOWS
 
