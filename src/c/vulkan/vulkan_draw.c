@@ -51,10 +51,10 @@ int zen_vk_draw_frame(size_t context_index) {
         .renderArea = { {0, 0}, info->swap_chain_extent },
         .clearValueCount = 1,
         .pClearValues = (VkClearValue[]){{.color = {{
-            __zencore_context__.renderer_context.clear_color[0], 
-            __zencore_context__.renderer_context.clear_color[1], 
-            __zencore_context__.renderer_context.clear_color[2], 
-            __zencore_context__.renderer_context.clear_color[3]
+            info->window->clear_color[0], 
+            info->window->clear_color[1], 
+            info->window->clear_color[2], 
+            info->window->clear_color[3]
         }}}},
     };
 
@@ -82,12 +82,32 @@ int zen_vk_draw_frame(size_t context_index) {
         if (!obj->enabled || obj->vertex_count == 0)
             continue;
 
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, context->graphics_pipelines[__zencore_context__.renderer_context.shaders[obj->shader].pipeline].graphics_pipeline);
+        ZEN_VulkanRenderPipline* pipeline = &context->graphics_pipelines[__zencore_context__.renderer_context.shaders[obj->shader].pipeline];
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->graphics_pipeline);
+        
         VkBuffer vertex_buffers[] = { context->vertex_buffer };
         VkDeviceSize offsets[] = { 0 };
+        
         vkCmdBindVertexBuffers(cmd, 0, 1, vertex_buffers, offsets);
         vkCmdBindIndexBuffer(cmd, context->index_buffer, 0, VK_INDEX_TYPE_UINT16);
         
+        // Working 2D Test
+        if (info->window->view_mode == ZEN_VIEW_MODE_2D) {
+            
+            mat4 model;
+            zen_make_model_from_transform_2d(&obj->transform, model);
+        
+            vkCmdPushConstants(
+                cmd,
+                pipeline->pipeline_layout,
+                VK_SHADER_STAGE_VERTEX_BIT,
+                0,
+                sizeof(mat4),
+                &model
+            );
+
+        }
+
         vkCmdDrawIndexed (
             cmd, 
             (uint32_t)obj->index_count, 

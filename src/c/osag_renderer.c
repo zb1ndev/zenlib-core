@@ -27,12 +27,12 @@
 
     }
 
-    void zen_set_clear_color(vec4 color) { 
-        glm_vec4_dup(color, __zencore_context__.renderer_context.clear_color); 
+    void zen_set_clear_color(ZEN_Window* window, vec4 color) { 
+        glm_vec4_dup(color, window->clear_color); 
     }
 
-    void zen_set_view_mode(ZEN_ViewMode mode) {
-        __zencore_context__.renderer_context.view_mode = mode;
+    void zen_set_view_mode(ZEN_Window* window, ZEN_ViewMode mode) {
+        window->view_mode = mode;
     }
 
     int zen_draw_frame(ZEN_Window* window) {
@@ -137,8 +137,10 @@
             __zencore_context__.renderer_context.render_objects = temp;
 
         }
-    
-        __zencore_context__.renderer_context.render_objects[__zencore_context__.renderer_context.render_object_count] = (ZEN_RenderObject) {
+        
+        ZEN_RenderObject* obj = &__zencore_context__.renderer_context.render_objects[__zencore_context__.renderer_context.render_object_count];
+
+        *obj = (ZEN_RenderObject) {
             .enabled = object.enabled,
             .shader = object.shader,
             .vertex_count = object.vertex_count,
@@ -146,27 +148,24 @@
             .index = index
         };
 
-        __zencore_context__.renderer_context.render_objects[__zencore_context__.renderer_context.render_object_count].vertices = malloc(sizeof(ZEN_Vertex) * object.vertex_count);
-        if (__zencore_context__.renderer_context.render_objects[__zencore_context__.renderer_context.render_object_count].vertices == NULL) {
+        obj->vertices = malloc(sizeof(ZEN_Vertex) * object.vertex_count);
+        if (obj->vertices == NULL) {
             log_error("Failed to allocate space for verticies.");
             return SIZE_MAX;
         }
+        memcpy(obj->vertices, object.vertices, sizeof(ZEN_Vertex) * object.vertex_count);
 
-        memcpy (
-            __zencore_context__.renderer_context.render_objects[__zencore_context__.renderer_context.render_object_count].vertices,
-            object.vertices, sizeof(ZEN_Vertex) * object.vertex_count
-        );
-
-        __zencore_context__.renderer_context.render_objects[__zencore_context__.renderer_context.render_object_count].indices = malloc(sizeof(ZEN_Vertex) * object.index_count);
-        if (__zencore_context__.renderer_context.render_objects[__zencore_context__.renderer_context.render_object_count].indices == NULL) {
+        obj->indices = malloc(sizeof(ZEN_Vertex) * object.index_count);
+        if (obj->indices == NULL) {
             log_error("Failed to allocate space for verticies.");
             return SIZE_MAX;
         }
+        memcpy(obj->indices, object.indices, sizeof(uint16_t) * object.index_count);
 
-        memcpy (
-            __zencore_context__.renderer_context.render_objects[__zencore_context__.renderer_context.render_object_count].indices,
-            object.indices, sizeof(uint16_t) * object.index_count
-        );
+
+        glm_vec3_copy(object.transform.position, obj->transform.position);
+        glm_vec3_copy(object.transform.scale, obj->transform.scale);
+        glm_vec4_copy(object.transform.rotation, obj->transform.rotation);
 
         __zencore_context__.renderer_context.render_object_count++;
         return index;
@@ -298,3 +297,20 @@
     }
 
 #pragma endregion // Indices
+#pragma region Transform
+
+    // 2D Order of ops
+    void zen_make_model_from_transform_2d(ZEN_Transform* transform, vec4* model) {
+
+        glm_mat4_identity(model);
+
+        glm_translate(model, transform->position);
+        glm_scale(model, transform->scale);
+
+        float angle = transform->rotation[2];
+        glm_make_rad(&angle);
+        glm_rotate(model, angle, (vec3){0.0f, 0.0f, 1.0f});
+
+    }
+
+#pragma endregion // Transform

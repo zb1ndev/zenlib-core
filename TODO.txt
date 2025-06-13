@@ -1,5 +1,4 @@
-[] - Finish Vertex / Index Buffer
-[] - Uniform Buffer
 [] - Texture Support
-[] - Copy Text Mesh Pro but with a z infront
+[] - Copy Text Mesh Pro but with a z infront ( naming wise )
 [] - Multi-threading Abstraction / Types
+[] - 3D Support

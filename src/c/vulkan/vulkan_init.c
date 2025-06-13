@@ -648,12 +648,18 @@ int zen_vk_create_graphics_pipeline(ZEN_Shader* shader) {
         .blendConstants[3] = 0.0f 
     };
 
+    VkPushConstantRange push_constant_range = {
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset = 0,
+        .size = sizeof(mat4)
+    };
+
     VkPipelineLayoutCreateInfo pipeline_layout_info = (VkPipelineLayoutCreateInfo) {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .setLayoutCount = 0,
         .pSetLayouts = NULL,
-        .pushConstantRangeCount = 0,
-        .pPushConstantRanges = NULL
+        .pushConstantRangeCount = 1,
+        .pPushConstantRanges = &push_constant_range
     };
     
     if (vkCreatePipelineLayout (

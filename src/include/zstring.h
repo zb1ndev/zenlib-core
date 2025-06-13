@@ -49,7 +49,7 @@
 
     } String;
 
-    #define Z_STRING_NULL (String){ NULL, 0, 0 }
+    #define Z_STRING_NULL (String) { NULL, 0, 0 }
     #define Z_STRING_FLOATING_ACCURACY 2
 
     /** A function that frees the contents of a string.

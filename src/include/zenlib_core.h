@@ -169,6 +169,14 @@
 
     } ZEN_EventHandler;
 
+    typedef enum ZEN_ViewMode {
+
+        ZEN_VIEW_MODE_2D, 
+        ZEN_VIEW_MODE_3D_ORTHOGRAPHIC,
+        ZEN_VIEW_MODE_3D_PERSPECTIVE
+    
+    } ZEN_ViewMode;
+
     typedef struct ZEN_Window {
 
         char* class_name;
@@ -196,6 +204,9 @@
         ZEN_Stopwatch frame_timer;
         double current_frame, last_frame;
 
+        vec4 clear_color;
+        ZEN_ViewMode view_mode;
+
     } ZEN_Window;
 
     typedef struct ZEN_VulkanRenderPipline {
@@ -222,6 +233,14 @@
 
     } ZEN_Shader;
 
+    typedef struct ZEN_Transform {
+
+        vec3 position;
+        vec4 rotation;
+        vec3 scale;
+
+    } ZEN_Transform;
+
     typedef struct ZEN_RenderObject {
         
         bool enabled;
@@ -234,16 +253,9 @@
         uint16_t* indices;
 
         size_t shader;
+        ZEN_Transform transform;
 
     } ZEN_RenderObject;
-
-    typedef enum ZEN_ViewMode {
-
-        ZEN_VIEW_MODE_2D, 
-        ZEN_VIEW_MODE_3D_ORTHOGRAPHIC,
-        ZEN_VIEW_MODE_3D_PERSPECTIVE
-    
-    } ZEN_ViewMode;
 
     typedef struct ZEN_VulkanSurfaceInfo {
 
@@ -328,9 +340,6 @@
 
         size_t render_object_capacity;
         ZEN_RenderObject* render_objects;
-
-        vec4 clear_color;
-        ZEN_ViewMode view_mode;
 
     } ZEN_RendererContext; 
 
@@ -541,7 +550,7 @@
          * Sets the clear color.
          * @param color The color you wish to set the clear color to.
          */
-        void zen_set_clear_color(vec4 color);
+        void zen_set_clear_color(ZEN_Window* window, vec4 color);
 
         /**
          * Appends a shader to the internal shader list.
@@ -626,7 +635,7 @@
          * Sets the view mode for the renderer.
          * @param mode The view mode you want to set it to.
          */
-        void zen_set_view_mode(ZEN_ViewMode mode);
+        void zen_set_view_mode(ZEN_Window* window, ZEN_ViewMode mode);
 
         /**
          * Draws a frame on the specified window, submitting all current render objects.
@@ -648,6 +657,8 @@
          * @returns The delta time in seconds.
          */
         float zen_get_delta_time(ZEN_Window* window);
+
+        void zen_make_model_from_transform_2d(ZEN_Transform* transform, vec4* model);
 
     #pragma endregion // Rendering
     #pragma region Vulkan
