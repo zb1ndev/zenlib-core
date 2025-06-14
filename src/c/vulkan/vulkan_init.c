@@ -121,6 +121,8 @@ void zen_destroy_vulkan(bool is_last, size_t context_index) {
 
     if (is_last) {
 
+        debug_log("Destroying last window...");
+
         for (size_t i = 0; i < __zencore_context__.vk_context.graphics_pipline_count; ++i) {
             
             vkDestroyPipeline ( 
@@ -143,12 +145,11 @@ void zen_destroy_vulkan(bool is_last, size_t context_index) {
         vkDestroyRenderPass(__zencore_context__.vk_context.device, __zencore_context__.vk_context.render_pass, NULL);
         vkDestroyCommandPool(__zencore_context__.vk_context.device, __zencore_context__.vk_context.command_pool, NULL);
 
+        vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer, NULL);
+        vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory, NULL);
         
         vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.index_buffer, NULL);
         vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.index_buffer_memory, NULL);
-
-        vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer, NULL);
-        vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory, NULL);
         
         vkDestroyDevice(__zencore_context__.vk_context.device, NULL);
         vkDestroyInstance(__zencore_context__.vk_context.instance, NULL);
@@ -817,6 +818,9 @@ int zen_vk_create_vertex_buffer(void) {
 
 int zen_vk_create_index_buffer(void) {
 
+    if (__zencore_context__.vk_context.info.initialized)
+        return 0;
+
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
     VkDeviceSize buffer_size = sizeof(uint16_t) * zen_get_index_count();
@@ -841,8 +845,8 @@ int zen_vk_create_index_buffer(void) {
         &__zencore_context__.vk_context.index_buffer, 
         &__zencore_context__.vk_context.index_buffer_memory
     );
+    
     zen_vk_copy_buffer(staging_buffer, __zencore_context__.vk_context.index_buffer, buffer_size);
-
     vkDestroyBuffer(__zencore_context__.vk_context.device, staging_buffer, NULL);
     vkFreeMemory(__zencore_context__.vk_context.device, staging_buffer_memory, NULL);
 

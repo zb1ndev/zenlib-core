@@ -59,9 +59,9 @@ int main(int argc, char** argv) {
         zen_draw_frame(window2);
 
     }
-
-    zen_destroy_window(window);
+    
     zen_destroy_window(window2);
+    zen_destroy_window(window);
 
     return 0;
 
