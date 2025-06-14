@@ -158,6 +158,7 @@
         void (*on_mouse_button)(void* data);
         
         void (*on_resize_callback)(void* data, ssize_t new_width, ssize_t new_height);
+        void (*on_move_callback)(void* data);
         void (*on_minimize_callback)(void* data);
         void (*on_restore_callback)(void* data);
         bool (*on_close_callback)(void* data);
@@ -176,6 +177,14 @@
         ZEN_VIEW_MODE_3D_PERSPECTIVE
     
     } ZEN_ViewMode;
+
+    typedef enum ZEN_Space {
+
+        ZEN_NDC_SPACE,
+        ZEN_SCREEN_SPACE,
+        ZEN_WORLD_SPACE
+
+    } ZEN_Space;
 
     typedef struct ZEN_Window {
 
@@ -244,6 +253,8 @@
     typedef struct ZEN_RenderObject {
         
         bool enabled;
+        ZEN_Space space;
+
         size_t index;
 
         size_t vertex_count;
@@ -658,7 +669,8 @@
          */
         float zen_get_delta_time(ZEN_Window* window);
 
-        void zen_make_model_from_transform_2d(ZEN_Transform* transform, vec4* model);
+        void zen_scale_vec3(vec3 a, float x_scale, float y_scale, float z_scale, vec3 dest);
+        void zen_make_model_from_transform_2d(ZEN_Window* window, ZEN_Transform* transform, vec4* model);
 
     #pragma endregion // Rendering
     #pragma region Vulkan

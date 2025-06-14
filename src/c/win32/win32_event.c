@@ -77,6 +77,11 @@
                 if (window->event_handler.on_key_up_callback != NULL)
                     window->event_handler.on_key_up_callback(window);
             } return 0;
+
+            case WM_MOVE: {
+                if (window->event_handler.on_move_callback != NULL)
+                    window->event_handler.on_move_callback(window);
+            }
             
             case WM_SIZE: {
                 if (wParam == SIZE_MINIMIZED) {

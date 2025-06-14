@@ -91,22 +91,18 @@ int zen_vk_draw_frame(size_t context_index) {
         vkCmdBindVertexBuffers(cmd, 0, 1, vertex_buffers, offsets);
         vkCmdBindIndexBuffer(cmd, context->index_buffer, 0, VK_INDEX_TYPE_UINT16);
         
-        // Working 2D Test
-        if (info->window->view_mode == ZEN_VIEW_MODE_2D) {
+        mat4 model;
+        if (info->window->view_mode == ZEN_VIEW_MODE_2D) 
+            zen_make_model_from_transform_2d(info->window, &obj->transform, model);
             
-            mat4 model;
-            zen_make_model_from_transform_2d(&obj->transform, model);
-        
-            vkCmdPushConstants(
-                cmd,
-                pipeline->pipeline_layout,
-                VK_SHADER_STAGE_VERTEX_BIT,
-                0,
-                sizeof(mat4),
-                &model
-            );
-
-        }
+        vkCmdPushConstants(
+            cmd,
+            pipeline->pipeline_layout,
+            VK_SHADER_STAGE_VERTEX_BIT,
+            0,
+            sizeof(mat4),
+            &model
+        );
 
         vkCmdDrawIndexed (
             cmd, 

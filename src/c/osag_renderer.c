@@ -299,13 +299,31 @@
 #pragma endregion // Indices
 #pragma region Transform
 
-    // 2D Order of ops
-    void zen_make_model_from_transform_2d(ZEN_Transform* transform, vec4* model) {
+    void zen_scale_vec3(vec3 a, float x_scale, float y_scale, float z_scale, vec3 dest) {
+        
+        dest[0] = a[0] * x_scale;
+        dest[1] = a[1] * y_scale;
+        dest[2] = a[2] * z_scale;
 
+    }
+
+    // 2D Order of ops
+    void zen_make_model_from_transform_2d(ZEN_Window* window, ZEN_Transform* transform, vec4* model) {
+
+        size_t* size = zen_get_window_size(window);
+        float x_scaling = 1.0f / size[0];
+        float y_scaling = 1.0f / size[1];
+
+        vec3 scaled_position;
+        vec3 scaled_scale;
+
+        zen_scale_vec3(transform->position, x_scaling, y_scaling, .0f, scaled_position);
+        zen_scale_vec3(transform->scale, x_scaling, y_scaling, .0f, scaled_scale);
+    
         glm_mat4_identity(model);
 
-        glm_translate(model, transform->position);
-        glm_scale(model, transform->scale);
+        glm_translate(model, scaled_position);
+        glm_scale(model, scaled_scale);
 
         float angle = transform->rotation[2];
         glm_make_rad(&angle);
