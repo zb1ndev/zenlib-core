@@ -93,7 +93,7 @@ int zen_vk_draw_frame(size_t context_index) {
         
         mat4 model;
         if (info->window->view_mode == ZEN_VIEW_MODE_2D) 
-            zen_make_model_from_transform_2d(info->window, &obj->transform, model);
+            zen_make_model_from_transform_2d(info->window, obj->coord_system, &obj->transform, model);
             
         vkCmdPushConstants(
             cmd,

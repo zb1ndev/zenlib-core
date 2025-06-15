@@ -178,13 +178,13 @@
     
     } ZEN_ViewMode;
 
-    typedef enum ZEN_Space {
+    typedef enum ZEN_CoordinateSystem {
 
         ZEN_NDC_SPACE,
         ZEN_SCREEN_SPACE,
         ZEN_WORLD_SPACE
 
-    } ZEN_Space;
+    } ZEN_CoordinateSystem;
 
     typedef struct ZEN_Window {
 
@@ -253,7 +253,7 @@
     typedef struct ZEN_RenderObject {
         
         bool enabled;
-        ZEN_Space space;
+        ZEN_CoordinateSystem coord_system;
 
         size_t index;
 
@@ -670,7 +670,7 @@
         float zen_get_delta_time(ZEN_Window* window);
 
         void zen_scale_vec3(vec3 a, float x_scale, float y_scale, float z_scale, vec3 dest);
-        void zen_make_model_from_transform_2d(ZEN_Window* window, ZEN_Transform* transform, vec4* model);
+        void zen_make_model_from_transform_2d(ZEN_Window* window, ZEN_CoordinateSystem coord, ZEN_Transform* transform, vec4* model);
 
     #pragma endregion // Rendering
     #pragma region Vulkan

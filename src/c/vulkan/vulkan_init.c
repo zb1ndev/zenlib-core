@@ -68,12 +68,12 @@ int zen_init_vulkan(ZEN_Window* window, uint32_t api_version) {
         return -1;
     }
 
-    if (zen_vk_create_vertex_buffer() < 0) {
+    if (!__zencore_context__.vk_context.info.initialized && zen_vk_create_vertex_buffer() < 0) {
         log_error("Failed to create vertex buffer.");
         return -1;
     }
 
-    if (zen_vk_create_index_buffer() < 0) {
+    if (!__zencore_context__.vk_context.info.initialized && zen_vk_create_index_buffer() < 0) {
         log_error("Failed to create index buffer.");
         return -1;
     }
@@ -778,14 +778,12 @@ int zen_vk_create_command_pool(void) {
 
 int zen_vk_create_vertex_buffer(void) {
 
-    if (__zencore_context__.vk_context.info.initialized)
-        return 0;
-
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
+
     uint64_t count = zen_get_vertex_count();
-    if (count == 0)
-        count = 3;
+    if (count == 0) count = 3;
+    
     uint64_t size = sizeof(ZEN_Vertex) * count;
 
     zen_vk_create_buffer (size, 
@@ -818,12 +816,13 @@ int zen_vk_create_vertex_buffer(void) {
 
 int zen_vk_create_index_buffer(void) {
 
-    if (__zencore_context__.vk_context.info.initialized)
-        return 0;
-
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
-    VkDeviceSize buffer_size = sizeof(uint16_t) * zen_get_index_count();
+
+    uint64_t count = zen_get_index_count();
+    if (count == 0) count = 3;
+
+    VkDeviceSize buffer_size = sizeof(uint16_t) * count;
 
     zen_vk_create_buffer (
         buffer_size, 

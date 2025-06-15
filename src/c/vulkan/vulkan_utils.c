@@ -379,7 +379,20 @@ int zen_vk_resize_vertex_buffer(void) {
         return -1;
 
     vkQueueWaitIdle(__zencore_context__.vk_context.present_queue);
-    log_error("\"zen_vk_resize_vertex_buffer\" is not implemented yet.");
+
+    // Destroy and free Vertex and Index Buffers and Memory
+    vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.index_buffer, NULL);
+    vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.index_buffer_memory, NULL);
+
+    vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer, NULL);
+    vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory, NULL);
+
+    // Recreate 
+    if (zen_vk_create_vertex_buffer() < 0)
+        return -1;
+
+    if (zen_vk_create_index_buffer() < 0)
+        return -1;
 
     return 0;
 

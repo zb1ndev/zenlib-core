@@ -143,6 +143,7 @@
         *obj = (ZEN_RenderObject) {
             .enabled = object.enabled,
             .shader = object.shader,
+            .coord_system = object.coord_system,
             .vertex_count = object.vertex_count,
             .index_count = object.index_count,
             .index = index
@@ -307,12 +308,11 @@
 
     }
 
-    // 2D Order of ops
-    void zen_make_model_from_transform_2d(ZEN_Window* window, ZEN_Transform* transform, vec4* model) {
+    void zen_make_model_from_transform_2d(ZEN_Window* window, ZEN_CoordinateSystem coord, ZEN_Transform* transform, vec4* model) {
 
         size_t* size = zen_get_window_size(window);
-        float x_scaling = 1.0f / size[0];
-        float y_scaling = 1.0f / size[1];
+        float x_scaling = coord == ZEN_NDC_SPACE ? 1.0f : 1.0f / size[0];
+        float y_scaling = coord == ZEN_NDC_SPACE ? 1.0f : 1.0f / size[1];
 
         vec3 scaled_position;
         vec3 scaled_scale;
