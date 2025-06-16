@@ -1,4 +1,4 @@
-#include "../../include/zenlib_core.h"
+#include "../zenlib_core.h"
 
 const char **zen_vk_get_instance_extensions(size_t *count) {
 

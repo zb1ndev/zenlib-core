@@ -1,4 +1,4 @@
-#include "../include/zenlib_core.h"
+#include "../zenlib_core.h"
 
 char* zen_read_file_contents(const char* file_path, size_t* file_size) {
 

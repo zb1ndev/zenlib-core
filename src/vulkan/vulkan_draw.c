@@ -1,4 +1,4 @@
-#include "../../include/zenlib_core.h"
+#include "../zenlib_core.h"
 
 int zen_vk_draw_frame(size_t context_index) {
     

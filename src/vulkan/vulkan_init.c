@@ -1,4 +1,4 @@
-#include "../../include/zenlib_core.h"
+#include "../zenlib_core.h"
 
 int zen_init_vulkan(ZEN_Window* window, uint32_t api_version) {
 

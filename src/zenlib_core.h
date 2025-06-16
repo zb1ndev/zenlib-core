@@ -29,7 +29,52 @@
 #if !defined(ZENLIB_CORE_H)
 #define ZENLIB_CORE_H
     
-    #define CLEAR_TERMINAL "\033[2J\033[H"
+    /////////////////////////
+    // Platform Specifiers //
+    /////////////////////////
+
+    #if defined(_WIN32) || defined(_WIN64)
+        #define ZEN_OS_WINDOWS
+    #elif defined(__APPLE__) && defined(__MACH__)
+        #define ZEN_OS_MAC
+    #elif defined(__linux__)
+        #define ZEN_OS_LINUX
+    #endif
+    
+    #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+        #define ZEN_OS_UNIX
+    #endif
+
+    //////////////////////
+    // Core Dependecies //
+    //////////////////////
+
+    #include "../deps/zstring.h"
+    #include "../deps/zstopwatch.h"
+
+    #include "vulkan/vulkan.h"
+    #include "../deps/cglm/cglm.h"
+
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <stdint.h>
+    #include <assert.h>
+    #include <stdbool.h>
+
+    #if defined(ZEN_OS_WINDOWS)
+
+        #include <windows.h>
+        #include <windowsx.h>
+        #include <commctrl.h>
+        #include <vulkan/vulkan_win32.h>
+
+    #endif // ZEN_OS_WINDOWS
+
+    ////////////////////
+    // Utility Macros //
+    ////////////////////
+
+    #define ZEN_CLEAR_TERMINAL "\033[2J\033[H"
 
     #define debug_log(msg) printf("[LOG] "msg"\n")
     #define debug_log_va(msg, ...) printf("[LOG] "msg"\n", __VA_ARGS__)
@@ -37,51 +82,15 @@
     #define log_error(msg) printf("[ERROR] "msg"\n")
     #define log_error_va(msg, ...) printf("[ERROR] "msg"\n", __VA_ARGS__)
 
-    // Windows
-    #if defined(_WIN32) || defined(_WIN64)
-        #define ZEN_OS_WINDOWS
-    #endif
-
-    // macOS
-    #if defined(__APPLE__) && defined(__MACH__)
-        #define ZEN_OS_MAC
-    #endif
-
-    // Linux
-    #if defined(__linux__)
-        #define ZEN_OS_LINUX
-    #endif
-
-    // Unix (includes macOS and Linux)
-    #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
-        #define ZEN_OS_UNIX
-    #endif
-
-    #include "zstring.h"
-    #include "zstopwatch.h"
-    #include "zthreading.h"
-
-    #include <stdlib.h>
-    #include <stdio.h>
-    #include <stdint.h>
-    #include <stdbool.h>
-    #include <assert.h>
-    
-    #include "vulkan/vulkan.h"
-    #include "../../deps/include/cglm/cglm.h"
-
-    #if defined(ZEN_OS_WINDOWS)
-        #include <windows.h>
-        #include <windowsx.h>
-        #include <commctrl.h>
-        #include <vulkan/vulkan_win32.h>
-    #endif // ZEN_OS_WINDOWS
-
     #define ZEN_VULKAN_VERSION VK_MAKE_VERSION(1,0,0)
     #define ZEN_MAX_WINDOWS 10
     #define ZEN_MAX_FRAMES_IN_FLIGHT 2
     
     #define zen_vk_offset_of(s, m) offsetof(s,m)
+
+    ///////////////////////
+    // Type Declarations //
+    ///////////////////////
 
     typedef enum ZEN_RendererAPI {
 
@@ -354,6 +363,10 @@
 
     } ZEN_RendererContext; 
 
+    /////////////////////////
+    // ZEN MAIN Definition //
+    /////////////////////////
+
     #if defined(ZEN_OS_WINDOWS)
     
         typedef struct ZEN_CoreContext {
@@ -382,6 +395,10 @@
         } int zen_main(a, b)
 
     #endif // ZEN_OS_WINDOWS
+    
+    ///////////////////////////
+    // Function Declarations //
+    ///////////////////////////
 
     #pragma region Window Management
 

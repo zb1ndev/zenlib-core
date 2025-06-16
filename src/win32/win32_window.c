@@ -1,4 +1,4 @@
-#include "../../include/zenlib_core.h"
+#include "../zenlib_core.h"
 
 #if defined(ZEN_OS_WINDOWS)
 

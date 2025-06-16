@@ -2,7 +2,7 @@
 #define Z_STOPWATCH_IMPLEMENTATION
 #define Z_THREADING_IMPLEMENTATION
 
-#include "../include/zenlib_core.h"
+#include "./zenlib_core.h"
 
 ZEN_CoreContext __zencore_context__ = (ZEN_CoreContext) {
     .renderer_context.render_object_count = 0,

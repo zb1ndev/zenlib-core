@@ -1,4 +1,4 @@
-#include "../include/zenlib_core.h"
+#include "../zenlib_core.h"
 
 bool zen_get_key_up(ZEN_Window* window, ZEN_KeyCode code) {
 
