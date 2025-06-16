@@ -686,7 +686,23 @@
          */
         float zen_get_delta_time(ZEN_Window* window);
 
+        /**
+         * Scales the provided vec3 by the specified amount per axis.
+         * @param a The vector you want to scale.
+         * @param x_scale The scale modifier for the X axis.
+         * @param y_scale The scale modifier for the Y axis.
+         * @param z_scale The scale modifier for the Z axis.
+         * @param dest A vec3 where the modified vector will be stored.
+         */
         void zen_scale_vec3(vec3 a, float x_scale, float y_scale, float z_scale, vec3 dest);
+
+        /**
+         * Creates a model matrix based on a transform using 2D order of operations.
+         * @param window The window in which these transformations will occur.
+         * @param coord The coordinate system the transform is using.
+         * @param transform The transform which the model will be based off.
+         * @param model The matrix in which the transformation will be stored.
+         */
         void zen_make_model_from_transform_2d(ZEN_Window* window, ZEN_CoordinateSystem coord, ZEN_Transform* transform, vec4* model);
 
     #pragma endregion // Rendering
@@ -741,25 +757,7 @@
 
     #if defined(ZEN_STRIP_PREFIX)
 
-        #define KeyCode ZEN_KeyCode
-        #define MouseState ZEN_MouseState
-        #define EventHandler ZEN_EventHandler
-        #define WindowStyle ZEN_WindowStyle
-        #define Window ZEN_Window
-        
-        #define create_window zen_create_window
-        #define window_should_close zen_window_should_close
-        #define destroy_window zen_destroy_window
-
-        #define get_key_up zen_get_key_up
-        #define get_key_down zen_get_key_down
-        #define get_key_pressed zen_get_key_pressed
-
-        #define get_mouse_up zen_get_mouse_up
-        #define get_mouse_down zen_get_mouse_down
-        #define get_mouse_pressed zen_get_mouse_pressed
-
-        #define initialize_renderer zen_initialize_renderer
+       
 
     #endif // ZEN_STRIP_PREFIX
 
