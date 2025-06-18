@@ -8,7 +8,7 @@ int zen_init_vulkan(ZEN_Window* window, uint32_t api_version) {
     if (__zencore_context__.vk_context.surfaces == NULL) {
         __zencore_context__.vk_context.surfaces = malloc(sizeof(ZEN_VulkanSurfaceInfo) * ZEN_MAX_WINDOWS);
         if (__zencore_context__.vk_context.surfaces == NULL) {
-            log_error("Failed to allocate space for window inside Vulkan context.");
+            printf(ERRORF "Failed to allocate space for window inside Vulkan context.\n");
             return -1;
         }
     }
@@ -19,72 +19,72 @@ int zen_init_vulkan(ZEN_Window* window, uint32_t api_version) {
     __zencore_context__.vk_context.surfaces[window->renderer_context_index].window = window;
 
     if (zen_vk_create_instance() < 0) {
-        log_error("Failed to create Vulkan instance.");
+        printf(ERRORF "Failed to create Vulkan instance.\n");
         return -1;
     }
 
     if (zen_vk_create_surface(window->renderer_context_index) < 0) {
-        log_error_va("Failed to create Vulkan surface for window %llu.", window->renderer_context_index);
+        printf(ERRORF "Failed to create Vulkan surface for window %llu.\n", window->renderer_context_index);
         return -1;
     }
 
     if (zen_vk_pick_physical_device(window->renderer_context_index) < 0) {
-        log_error("Failed to pick a suitable device.");
+        printf(ERRORF "Failed to pick a suitable device.\n");
         return -1;
     }
 
     if (zen_vk_create_logical_device() < 0) {
-        log_error("Failed to create a logical device.");
+        printf(ERRORF "Failed to create a logical device.\n");
         return -1;
     }
 
     if (zen_vk_create_swap_chain(window->renderer_context_index) < 0) {
-        log_error_va("Failed to create swapchain for window %llu.", window->renderer_context_index);
+        printf(ERRORF "Failed to create swapchain for window %llu.\n", window->renderer_context_index);
         return -1;
     }
 
     if (zen_vk_create_image_views(window->renderer_context_index) < 0) {
-        log_error_va("Failed to create image views for window %llu.", window->renderer_context_index);
+        printf(ERRORF "Failed to create image views for window %llu.\n", window->renderer_context_index);
         return -1;
     }
 
     if (zen_vk_create_render_pass(window->renderer_context_index) < 0) {
-        log_error("Failed to create render pass.");
+        printf(ERRORF "Failed to create render pass.\n");
         return -1;
     }
 
     if (zen_vk_create_graphics_pipelines() < 0) {
-        log_error("Failed to create graphics pipelines.");
+        printf(ERRORF "Failed to create graphics pipelines.\n");
         return -1;
     }
     
     if (zen_vk_create_framebuffers(window->renderer_context_index) < 0) {
-        log_error_va("Failed to create frame buffers for window %llu.", window->renderer_context_index);
+        printf(ERRORF "Failed to create frame buffers for window %llu.\n", window->renderer_context_index);
         return -1;
     }
     
     if (zen_vk_create_command_pool() < 0) {
-        log_error("Failed to create command pool.");
+        printf(ERRORF "Failed to create command pool.\n");
         return -1;
     }
 
     if (!__zencore_context__.vk_context.info.initialized && zen_vk_create_vertex_buffer() < 0) {
-        log_error("Failed to create vertex buffer.");
+        printf(ERRORF "Failed to create vertex buffer.\n");
         return -1;
     }
 
     if (!__zencore_context__.vk_context.info.initialized && zen_vk_create_index_buffer() < 0) {
-        log_error("Failed to create index buffer.");
+        printf(ERRORF "Failed to create index buffer.\n");
         return -1;
     }
 
     if (zen_vk_create_command_buffers(window->renderer_context_index) < 0) {
-        log_error_va("Failed to create command buffers for window %llu.", window->renderer_context_index);
+        printf(ERRORF "Failed to create command buffers for window %llu.\n", window->renderer_context_index);
         return -1;
     }
 
     if (zen_vk_create_sync_objects(window->renderer_context_index) < 0) {
-        log_error_va("Failed to create sync objects for window %llu.", window->renderer_context_index);
+        printf(ERRORF "Failed to create sync objects for window %llu.\n", window->renderer_context_index);
         return -1;
     }
 
@@ -120,8 +120,6 @@ void zen_destroy_vulkan(bool is_last, size_t context_index) {
     vkDestroySurfaceKHR(__zencore_context__.vk_context.instance, info->surface, NULL);
 
     if (is_last) {
-
-        debug_log("Destroying last window...");
 
         for (size_t i = 0; i < __zencore_context__.vk_context.graphics_pipline_count; ++i) {
             
@@ -186,7 +184,7 @@ int zen_vk_create_instance(void) {
     };
 
     if (vkCreateInstance(&create_info, NULL, &__zencore_context__.vk_context.instance) != VK_SUCCESS) {
-        log_error("Failed to create vulkan instance.");
+        printf(ERRORF "Failed to create vulkan instance.\n");
         return -1;
     }
 
@@ -209,7 +207,7 @@ int zen_vk_create_surface(size_t context_index) {
             &create_info, NULL, 
             &__zencore_context__.vk_context.surfaces[context_index].surface
         ) != VK_SUCCESS) {
-            log_error("Failed to create surface.");
+            printf(ERRORF "Failed to create surface.\n");
             return -1;
         }
 
@@ -233,13 +231,13 @@ int zen_vk_pick_physical_device(size_t context_index) {
     vkEnumeratePhysicalDevices(instance, &device_count, NULL);
 
     if (device_count == 0) {
-        log_error("Failed to find GPUs with Vulkan support.");
+        printf(ERRORF "Failed to find GPUs with Vulkan support.\n");
         return -1;
     }
 
     VkPhysicalDevice* devices = malloc(sizeof(VkPhysicalDevice) * device_count);
     if (vkEnumeratePhysicalDevices(instance, &device_count, devices) != VK_SUCCESS) {
-        log_error("Failed to enumerate devices.");
+        printf(ERRORF "Failed to enumerate devices.\n");
         return -1;
     }
 
@@ -254,7 +252,7 @@ int zen_vk_pick_physical_device(size_t context_index) {
     free(devices);
 
     if (__zencore_context__.vk_context.physical_device == VK_NULL_HANDLE) {
-        log_error("Failed to find suitable physical device.");
+        printf(ERRORF "Failed to find suitable physical device.\n");
         return -1;
     }
 
@@ -301,7 +299,7 @@ int zen_vk_create_logical_device(void) {
     };
 
     if (vkCreateDevice(physical_device, &create_info, NULL, &__zencore_context__.vk_context.device) != VK_SUCCESS) {
-        log_error("Failed to create logical device.");
+        printf(ERRORF "Failed to create logical device.\n");
         return -1;
     }
 
@@ -329,7 +327,7 @@ int zen_vk_create_swap_chain(size_t context_index) {
         __zencore_context__.vk_context.physical_device, 
         context_index
     )) {
-        log_error("Selected device does not support swapchain.");
+        printf(ERRORF "Selected device does not support swapchain.\n");
         return -1;
     }
 
@@ -375,20 +373,20 @@ int zen_vk_create_swap_chain(size_t context_index) {
     create_info.clipped = VK_TRUE;
 
     if (vkCreateSwapchainKHR(__zencore_context__.vk_context.device, &create_info, NULL, &info->swap_chain) != VK_SUCCESS) {
-        log_error("Failed to create swap chain.");
+        printf(ERRORF "Failed to create swap chain.\n");
         return -1;
     }
 
     vkGetSwapchainImagesKHR(__zencore_context__.vk_context.device, info->swap_chain, &image_count, NULL);
     if (image_count == 0) {
-        log_error("Failed to find any chain images.");
+        printf(ERRORF "Failed to find any chain images.\n");
         return -1;
     }
 
     info->swap_chain_image_count = (size_t)image_count;
     info->swap_chain_images = malloc(sizeof(VkImage) * image_count);
     if (info->swap_chain_images == NULL) {
-        log_error("Failed to allocate space for chain images.");
+        printf(ERRORF "Failed to allocate space for chain images.\n");
         return -1;
     }
 
@@ -412,7 +410,7 @@ int zen_vk_create_image_views(size_t context_index) {
     info->swap_chain_image_view_count = 0;
     info->swap_chain_image_views = malloc(sizeof(VkImageView) * info->swap_chain_image_count);
     if (info->swap_chain_image_views == NULL) {
-        log_error("Failed to allocate space for swap chain image views.");
+        printf(ERRORF "Failed to allocate space for swap chain image views.\n");
         return -1;
     }
 
@@ -439,7 +437,7 @@ int zen_vk_create_image_views(size_t context_index) {
         };
 
         if (vkCreateImageView(__zencore_context__.vk_context.device, &create_info, NULL, &info->swap_chain_image_views[i]) != VK_SUCCESS) {
-            log_error("Failed to create image views.");
+            printf(ERRORF "Failed to create image views.\n");
             return -1;
         }
 
@@ -506,7 +504,7 @@ int zen_vk_create_render_pass(size_t context_index) {
         &render_pass_info, NULL, 
         &__zencore_context__.vk_context.render_pass
     ) != VK_SUCCESS) {
-        log_error("Failed to create render pass.");
+        printf(ERRORF "Failed to create render pass.\n");
         return -1;
     }
 
@@ -521,7 +519,7 @@ int zen_vk_create_graphics_pipelines(void) {
 
     __zencore_context__.vk_context.graphics_pipelines = malloc(__zencore_context__.renderer_context.shader_count * sizeof(ZEN_VulkanRenderPipline));
     if (__zencore_context__.vk_context.graphics_pipelines == NULL) {
-        log_error("Failed to allocate space for piplines.");
+        printf(ERRORF "Failed to allocate space for piplines.\n");
         return -1;
     }
 
@@ -566,7 +564,7 @@ int zen_vk_create_graphics_pipeline(ZEN_Shader* shader) {
 
     VkDynamicState* dynamic_states = malloc(sizeof(VkDynamicState) * 2);
     if (dynamic_states == NULL) {
-        log_error("Failed to allocate space for dynamic states.");
+        printf(ERRORF "Failed to allocate space for dynamic states.\n");
         return -1;
     }
 
@@ -668,7 +666,7 @@ int zen_vk_create_graphics_pipeline(ZEN_Shader* shader) {
         &pipeline_layout_info, NULL, 
         &pipline->pipeline_layout
     ) != VK_SUCCESS) {
-        log_error("Failed to create pipeline layout.");
+        printf(ERRORF "Failed to create pipeline layout.\n");
         return -1;
     }
 
@@ -697,7 +695,7 @@ int zen_vk_create_graphics_pipeline(ZEN_Shader* shader) {
         &pipeline_info, NULL, 
         &pipline->graphics_pipeline) != VK_SUCCESS
     ) {
-        log_error("Failed to create graphics pipeline.");
+        printf(ERRORF "Failed to create graphics pipeline.\n");
         return -1;
     }
     
@@ -717,7 +715,7 @@ int zen_vk_create_framebuffers(size_t context_index) {
 
     info->frame_buffers = malloc(sizeof(VkFramebuffer) * info->swap_chain_image_view_count);
     if (info->frame_buffers == NULL) {
-        log_error("Failed to allocate space for frame buffers.");
+        printf(ERRORF "Failed to allocate space for frame buffers.\n");
         return -1;
     }
 
@@ -742,7 +740,7 @@ int zen_vk_create_framebuffers(size_t context_index) {
             &framebuffer_info, NULL, 
             &info->frame_buffers[i]
         ) != VK_SUCCESS) {
-            log_error("Failed to create framebuffer.");
+            printf(ERRORF "Failed to create framebuffer.\n");
             return -1;
         }
 
@@ -768,7 +766,7 @@ int zen_vk_create_command_pool(void) {
         &pool_info, NULL, 
         &__zencore_context__.vk_context.command_pool
     ) != VK_SUCCESS) {
-        log_error("Failed to create command pool.");
+        printf(ERRORF "Failed to create command pool.\n");
         return -1;
     }
 
@@ -859,7 +857,7 @@ int zen_vk_create_command_buffers(size_t context_index) {
 
     info->command_buffers = malloc(sizeof(VkCommandBuffer) * ZEN_MAX_FRAMES_IN_FLIGHT);
     if (info->command_buffers == NULL) {
-        log_error("Failed to allocate space for command buffers.");
+        printf(ERRORF "Failed to allocate space for command buffers.\n");
         return -1;
     }
 
@@ -875,7 +873,7 @@ int zen_vk_create_command_buffers(size_t context_index) {
         &alloc_info, 
         info->command_buffers
     ) != VK_SUCCESS) {
-        log_error("Failed to allocate command buffers.");
+        printf(ERRORF "Failed to allocate command buffers.\n");
         return -1;
     }
 
@@ -889,17 +887,17 @@ int zen_vk_create_sync_objects(size_t context_index) {
 
     info->image_available_semaphores = malloc(sizeof(VkSemaphore) * ZEN_MAX_FRAMES_IN_FLIGHT);
     if (info->image_available_semaphores == NULL) {
-        log_error("Failed to allocate space for command buffers.");
+        printf(ERRORF "Failed to allocate space for command buffers.\n");
         return -1;
     }
     info->render_finished_semaphores = malloc(sizeof(VkSemaphore) * ZEN_MAX_FRAMES_IN_FLIGHT);
     if (info->render_finished_semaphores == NULL) {
-        log_error("Failed to allocate space for command buffers.");
+        printf(ERRORF "Failed to allocate space for command buffers.\n");
         return -1;
     }
     info->in_flight_fences = malloc(sizeof(VkFence) * ZEN_MAX_FRAMES_IN_FLIGHT);
     if (info->in_flight_fences == NULL) {
-        log_error("Failed to allocate space for command buffers.");
+        printf(ERRORF "Failed to allocate space for command buffers.\n");
         return -1;
     }
 
@@ -916,7 +914,7 @@ int zen_vk_create_sync_objects(size_t context_index) {
         if (vkCreateSemaphore(__zencore_context__.vk_context.device, &semaphore_info, NULL, &info->image_available_semaphores[i]) != VK_SUCCESS ||
             vkCreateSemaphore(__zencore_context__.vk_context.device, &semaphore_info, NULL, &info->render_finished_semaphores[i]) != VK_SUCCESS ||
             vkCreateFence(__zencore_context__.vk_context.device, &fence_info, NULL, &info->in_flight_fences[i]) != VK_SUCCESS) {
-            log_error("Failed to create semaphores.");
+            printf(ERRORF "Failed to create semaphores.\n");
             return -1;
         }
     }

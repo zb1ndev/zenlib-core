@@ -38,13 +38,13 @@ bool zen_vk_find_queue_families(VkPhysicalDevice device, size_t context_index) {
     ZEN_VulkanSurfaceInfo* info = &__zencore_context__.vk_context.surfaces[context_index];
 
     if (queue_family_count == 0) {
-        log_error("Failed to get physical device queue family properties.");
+        printf(ERRORF "Failed to get physical device queue family properties.\n");
         return false;
     }
 
     VkQueueFamilyProperties* families = malloc(sizeof(VkQueueFamilyProperties) * queue_family_count);
     if (families == NULL) {
-        log_error("Faild to allocate space for queue family properties.");
+        printf(ERRORF "Faild to allocate space for queue family properties.\n");
         return false;
     }
 
@@ -96,14 +96,14 @@ bool zen_vk_query_swapchain_support(VkPhysicalDevice device, size_t context_inde
         device, info->surface, 
         &format_count, NULL
     ) != VK_SUCCESS) {
-        log_error("Failed to find any formats");
+        printf(ERRORF "Failed to find any formats.\n");
         return false;
     }
     info->surface_format_count = (size_t)format_count;
 
     info->surface_formats = malloc(sizeof(VkSurfaceFormatKHR) * format_count);
     if (info->surface_formats == NULL) {
-        log_error("Failed to allocate space for surface formats.");
+        printf(ERRORF "Failed to allocate space for surface formats.\n");
         return false;
     }
 
@@ -111,7 +111,7 @@ bool zen_vk_query_swapchain_support(VkPhysicalDevice device, size_t context_inde
         device, info->surface, 
         &format_count, info->surface_formats
     ) != VK_SUCCESS) {
-        log_error("Failed to get surface formats.");
+        printf(ERRORF "Failed to get surface formats.\n");
         return false;
     }
 
@@ -121,14 +121,14 @@ bool zen_vk_query_swapchain_support(VkPhysicalDevice device, size_t context_inde
         device, info->surface, 
         &present_mode_count, NULL
     ) != VK_SUCCESS) {
-        log_error("Failed to find any present modes");
+        printf(ERRORF "Failed to find any present modes.\n");
         return false;
     }
     info->present_mode_count = (size_t)present_mode_count;
 
     info->present_modes = malloc(sizeof(VkPresentModeKHR) * present_mode_count);
     if (info->present_modes == NULL) {
-        log_error("Failed to allocate space for surface formats.");
+        printf(ERRORF "Failed to allocate space for surface formats.\n");
         return false;
     }
 
@@ -138,7 +138,7 @@ bool zen_vk_query_swapchain_support(VkPhysicalDevice device, size_t context_inde
         &present_mode_count, 
         info->present_modes
     ) != VK_SUCCESS) {
-        log_error("Failed to get present modes.");
+        printf(ERRORF "Failed to get present modes.\n");
         return false;
     }
 
@@ -151,13 +151,13 @@ bool zen_vk_device_has_extensions(VkPhysicalDevice device) {
     uint32_t extension_count = 0;
     vkEnumerateDeviceExtensionProperties(device, NULL, &extension_count, NULL);
     if (extension_count == 0) {
-        log_error("Failed to enumerate device extensions.");
+        printf(ERRORF "Failed to enumerate device extensions.\n");
         return false;
     }
 
     VkExtensionProperties* extension_props = malloc(sizeof(VkExtensionProperties) * extension_count);
     if (extension_props == NULL) {
-        log_error("Failed to allocate space for extension properties.");
+        printf(ERRORF "Failed to allocate space for extension properties.\n");
         return false;
     }
 
@@ -175,7 +175,7 @@ bool zen_vk_device_has_extensions(VkPhysicalDevice device) {
         }
 
         if (found_extension == false) {
-            log_error("Failed to find device with required extensions.");
+            printf(ERRORF "Failed to find device with required extensions.\n");
             return false;
         }
         
@@ -269,7 +269,7 @@ VkShaderModule zen_vk_create_shader_module(const char* code, size_t code_size) {
 
     VkShaderModule shader_module;
     if (vkCreateShaderModule(__zencore_context__.vk_context.device, &create_info, NULL, &shader_module) != VK_SUCCESS) {
-        log_error("Failed to create shader module.");
+        printf(ERRORF "Failed to create shader module.\n");
         return VK_NULL_HANDLE;
     }
     
@@ -355,17 +355,17 @@ int zen_vk_recreate_swapchain(size_t context_index) {
     zen_vk_cleanup_swapchain(context_index);
 
     if (zen_vk_create_swap_chain(context_index) < 0) {
-        log_error("Failed to recreate swapchain.");
+        printf(ERRORF "Failed to recreate swapchain.\n");
         return -1;
     }
 
     if (zen_vk_create_image_views(context_index) < 0) {
-        log_error("Failed to recreate image views.");
+        printf(ERRORF "Failed to recreate image views.\n");
         return -1;
     }
     
     if (zen_vk_create_framebuffers(context_index) < 0) {
-        log_error("Failed to recreate frame buffers.");
+        printf(ERRORF "Failed to recreate frame buffers.\n");
         return -1;
     }
 
@@ -406,7 +406,7 @@ int zen_vk_append_graphics_pipeline(size_t shader_index) {
     );
 
     if (temp == NULL) {
-        log_error("Failed to allocate space for graphics pipeline.");
+        printf(ERRORF "Failed to allocate space for graphics pipeline.\n");
         return -1;
     }
 
@@ -427,7 +427,7 @@ int zen_vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPr
     };
     
     if (vkCreateBuffer(__zencore_context__.vk_context.device, &buffer_info, NULL, buffer) != VK_SUCCESS) {
-        log_error("Failed to create buffer.");
+        printf(ERRORF "Failed to create buffer.\n");
         return -1;
     }
 
@@ -441,7 +441,7 @@ int zen_vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPr
     };
 
     if (vkAllocateMemory(__zencore_context__.vk_context.device, &alloc_info, NULL, buffer_memory) != VK_SUCCESS) {
-        log_error("Failed to allocate buffer memory.");
+        printf(ERRORF "Failed to allocate buffer memory.\n");
         return -1;
     }
 

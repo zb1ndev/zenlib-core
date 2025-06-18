@@ -65,6 +65,7 @@
 
         #include <windows.h>
         #include <windowsx.h>
+        #include <dwmapi.h>
         #include <commctrl.h>
         #include <vulkan/vulkan_win32.h>
 
@@ -76,11 +77,9 @@
 
     #define ZEN_CLEAR_TERMINAL "\033[2J\033[H"
 
-    #define debug_log(msg) printf("[LOG] "msg"\n")
-    #define debug_log_va(msg, ...) printf("[LOG] "msg"\n", __VA_ARGS__)
- 
-    #define log_error(msg) printf("[ERROR] "msg"\n")
-    #define log_error_va(msg, ...) printf("[ERROR] "msg"\n", __VA_ARGS__)
+    #define LOGF    "[\e[030mLOG\e[0m] "
+    #define WARNF   "[\e[033mWARNING\e[0m] "
+    #define ERRORF  "[\e[031mERROR\e[0m] "
 
     #define ZEN_VULKAN_VERSION VK_MAKE_VERSION(1,0,0)
     #define ZEN_MAX_WINDOWS 10
@@ -224,6 +223,8 @@
 
         vec4 clear_color;
         ZEN_ViewMode view_mode;
+
+        bool show_title_bar;
 
     } ZEN_Window;
 
@@ -408,7 +409,7 @@
          * @param height The height of the window.
          * @returns A reference to the window.
          */
-        ZEN_Window* zen_create_window(const char* title, size_t width, size_t height, ZEN_RendererAPI api); 
+        ZEN_Window* zen_create_window(const char* title, size_t width, size_t height, ZEN_RendererAPI api, bool show_title_bar); 
         
         /** A function that determines if a window should close.
          * @param window The window you want to watch.
@@ -441,7 +442,7 @@
          * @param title The new title for the window.
          */
         void zen_set_window_title(ZEN_Window* window, const char* title);
-        
+
         /** Sets the icon of the specified window.
          * @param window The window whose icon to set.
          * @param path The file path to the icon image.
@@ -457,15 +458,15 @@
         
         /** A function that gets the specified window's position.
          * @param window The window you want to check.
-         * @returns The position stored in an array, ```[0]``` is X, ```[1]``` is Y.
+         * @param dest The place where the position values will be stored.
          */
-        size_t* zen_get_window_position(ZEN_Window* window);
+        void zen_get_window_position(ZEN_Window* window, ivec2 dest);
 
         /** A function that gets the specified window's size.
          * @param window The window you want to check.
-         * @returns The position stored in an array, ```[0]``` is Width, ```[1]``` is Height.
+         * @param dest The place where the size values will be stored.
          */
-        size_t* zen_get_window_size(ZEN_Window* window);
+        void zen_get_window_size(ZEN_Window* window, ivec2 dest);
 
         /** Sets the position of the specified window on the screen.
          * @param window The window to move.
@@ -486,6 +487,7 @@
         #if defined(ZEN_OS_WINDOWS)
 
             LRESULT CALLBACK ZEN_WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+            LRESULT zen_handle_hit_test(ZEN_Window* window, LPARAM lParam);
             
             /** A function that updates a window's event handler key states.
              * @param window The window you want to update.
@@ -544,6 +546,12 @@
          * @returns Whether the button is pressed.
          */
         bool zen_get_mouse_pressed(ZEN_Window* window, size_t button);
+
+         /** A function that gets the mouse position in the specified window.
+         * @param window The window you want to check.
+         * @param dest The place where the position will be stored.
+         */
+        void zen_get_mouse_position(ZEN_Window* window, ivec2 dest);
 
     #pragma endregion // Event System
     #pragma region File System

@@ -4,13 +4,13 @@ char* zen_read_file_contents(const char* file_path, size_t* file_size) {
 
     FILE *file = fopen(file_path, "rb"); 
     if (file == NULL) {
-        log_error_va("Failed to open file : %s", file_path);
+        printf(ERRORF "Failed to open file : %s\n", file_path);
         return NULL;
     }
 
     if (fseek(file, 0, SEEK_END) != 0) {
         fclose(file);
-        log_error("Failed to find end of file.");
+        printf(ERRORF "Failed to find end of file.\n");
         return NULL;
     }
 
@@ -20,7 +20,7 @@ char* zen_read_file_contents(const char* file_path, size_t* file_size) {
     char *buffer = malloc(sizeof(char) * r_file_size);
     if (buffer == NULL) {
         fclose(file);
-        log_error("Failed to allocate space of file contents.");
+        printf(ERRORF "Failed to allocate space of file contents.\n");
         return NULL;
     }
 

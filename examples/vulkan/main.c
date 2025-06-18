@@ -1,6 +1,6 @@
 #include "../../src/zenlib_core.h"
 
-size_t draw_square(const vec3 position, const vec3 scale, const vec4 rotation, size_t shader) {
+size_t draw_square(const vec3 position, const vec3 scale, const vec3 color, size_t shader) {
     
     return zen_append_render_object((ZEN_RenderObject) {
 
@@ -10,10 +10,10 @@ size_t draw_square(const vec3 position, const vec3 scale, const vec4 rotation, s
 
         .vertex_count = 4,
         .vertices = (ZEN_Vertex[]) {
-            {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-            {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-            {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+            {{-0.5f, -0.5f}, {color[0], color[1], color[2]}},
+            {{0.5f, -0.5f},  {color[0], color[1], color[2]}},
+            {{0.5f, 0.5f},   {color[0], color[1], color[2]}},
+            {{-0.5f, 0.5f},  {color[0], color[1], color[2]}}
         },
         
         .index_count = 6,
@@ -22,7 +22,7 @@ size_t draw_square(const vec3 position, const vec3 scale, const vec4 rotation, s
         .transform = (ZEN_Transform) {
             .position = {position[0], position[1], position[2]},
             .scale = {scale[0], scale[1], scale[2]},
-            .rotation = {rotation[0], rotation[1], rotation[2], rotation[3]}
+            .rotation = {.0f, .0f, .0f, .0f}
         }
 
     });
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     });
 
     ssize_t square_1 = -1;
-    ZEN_Window* window = zen_create_window("Game Window", 1280, 720, ZEN_RAPI_Vulkan);
+    ZEN_Window* window = zen_create_window("Game Window", 1280, 720, ZEN_RAPI_Vulkan, false);
     
     zen_set_view_mode(window, ZEN_VIEW_MODE_2D);
     zen_set_clear_color(window, (vec4){0.02f,0.02f,0.02f,1.0f});
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
             break;
 
         if (zen_get_key_down(window, Z_KEY_Space))
-            square_1 = draw_square((vec3){.0f,.0f,.0f}, (vec3){200.0f,200.0f,.0f}, (vec4){.0f,.0f,0.0f,.0f}, default_shader);
+            square_1 = draw_square((vec3){.0f, .0f, .0f}, (vec3){200.0f,200.0f,.0f}, (vec3){1.0f, 1.0f, 1.0f}, default_shader);
             
         move_player(window, square_1);
         zen_draw_frame(window);
@@ -91,7 +91,6 @@ int main(int argc, char** argv) {
     }
 
     zen_destroy_window(window);
-
     return 0;
 
 }

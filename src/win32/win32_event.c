@@ -16,7 +16,17 @@
 
         switch (uMsg) {
 
-            case WM_MOUSEMOVE: {
+            case WM_NCHITTEST : {
+
+                if (!window->show_title_bar) {
+                    LRESULT hit = zen_handle_hit_test(window, lParam);
+                    if (hit != HTCLIENT)
+                        return hit;
+                }
+
+            } return 0;
+
+            case WM_MOUSEMOVE : {
 
                 int x = GET_X_LPARAM(lParam);
                 int y = GET_Y_LPARAM(lParam);
@@ -29,7 +39,7 @@
             } return 0;
 
             case WM_LBUTTONDOWN:
-            case WM_LBUTTONUP: {
+            case WM_LBUTTONUP : {
 
                 ZEN_MouseState* mouse = &window->event_handler.mouse_state;
                 mouse->prev_button_states[0] = mouse->button_states[0];
@@ -41,7 +51,7 @@
             } return 0;
 
             case WM_RBUTTONDOWN:
-            case WM_RBUTTONUP: {
+            case WM_RBUTTONUP : {
 
                 ZEN_MouseState* mouse = &window->event_handler.mouse_state;
                 mouse->prev_button_states[2] = mouse->button_states[2];
@@ -53,7 +63,7 @@
             } return 0;
 
             case WM_MBUTTONDOWN:
-            case WM_MBUTTONUP: {
+            case WM_MBUTTONUP : {
                 ZEN_MouseState* mouse = &window->event_handler.mouse_state;
                 mouse->prev_button_states[1] = mouse->button_states[1];
                 mouse->button_states[1] = (uMsg == WM_MBUTTONDOWN);
@@ -63,7 +73,7 @@
 
             } return 0;
 
-            case WM_KEYDOWN: {
+            case WM_KEYDOWN : {
                 UINT vkCode = (UINT)wParam;
                 zen_update_key_states(window, vkCode, true);
                 if (window->event_handler.on_key_down_callback != NULL)
@@ -71,32 +81,54 @@
 
             } return 0;
 
-            case WM_KEYUP: {
+            case WM_KEYUP : {
                 UINT vkCode = (UINT)wParam;
                 zen_update_key_states(window, vkCode, false);
                 if (window->event_handler.on_key_up_callback != NULL)
                     window->event_handler.on_key_up_callback(window);
             } return 0;
 
-            case WM_MOVE: {
+            case WM_MOVE : {
                 if (window->event_handler.on_move_callback != NULL)
                     window->event_handler.on_move_callback(window);
-            }
+            } return 0;
             
-            case WM_SIZE: {
+            case WM_SIZE : {
+                
                 if (wParam == SIZE_MINIMIZED) {
                     window->event_handler.minimized = true;
                     if (window->event_handler.on_minimize_callback != NULL)
                         window->event_handler.on_minimize_callback(window);
                 }
+                
                 if (wParam == SIZE_RESTORED) {
+                
                     window->event_handler.minimized = false;
                     if(window->event_handler.on_restore_callback != NULL)
                         window->event_handler.on_restore_callback(window);
+
+                    RECT rect;
+                    if (!GetWindowRect(window->handle, &rect))
+                        printf(ERRORF "Failed to get window rect.\n");
+                    window->width = rect.right - rect.left;
+                    window->height = rect.bottom - rect.top;
+                
                 }
+
+                if (wParam == SIZE_MAXIMIZED) {
+                
+                    RECT rect;
+                    if (!GetWindowRect(window->handle, &rect))
+                        printf(ERRORF "Failed to get window rect.\n");
+                    window->width = rect.right - rect.left;
+                    window->height = rect.bottom - rect.top;
+                
+                }
+
             } return 0;
 
-            case WM_SIZING:{
+            case WM_SIZING : {
+
                 RECT* rect = (RECT*)lParam;
                 if (window->event_handler.on_resize_callback != NULL)
                     window->event_handler.on_resize_callback(window, rect->right - rect->left, rect->bottom - rect->top);
@@ -106,11 +138,11 @@
 
             } return TRUE;
 
-            case WM_DESTROY:{
+            case WM_DESTROY : {
                 PostQuitMessage(0);
             } return 0;
 
-            case WM_CLOSE: {
+            case WM_CLOSE : {
                 if (window->event_handler.on_close_callback == NULL || window->event_handler.on_close_callback(window))
                     window->event_handler.should_close = true;
             }  return 0;
@@ -122,6 +154,42 @@
 
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
 
+    }
+
+    LRESULT zen_handle_hit_test(ZEN_Window* window, LPARAM lParam) {
+
+        const int BORDER_WIDTH = 8; // Resize border width in pixels
+
+        POINT pt = {
+            .x = GET_X_LPARAM(lParam),
+            .y = GET_Y_LPARAM(lParam)
+        };
+        ScreenToClient(window->handle, &pt);
+
+        RECT rect;
+        GetClientRect(window->handle, &rect);
+
+        BOOL left   = pt.x < BORDER_WIDTH;
+        BOOL right  = pt.x >= rect.right - BORDER_WIDTH;
+        BOOL top    = pt.y < BORDER_WIDTH;
+        BOOL bottom = pt.y >= rect.bottom - BORDER_WIDTH;
+
+        if (top && left)      return HTTOPLEFT;
+        if (top && right)     return HTTOPRIGHT;
+        if (bottom && left)   return HTBOTTOMLEFT;
+        if (bottom && right)  return HTBOTTOMRIGHT;
+        if (left)             return HTLEFT;
+        if (right)            return HTRIGHT;
+        if (top)              return HTTOP;
+        if (bottom)           return HTBOTTOM;
+
+        // Title bar area for dragging (adjust as needed)
+        const int title_bar_height = 32;
+        if (pt.y < title_bar_height)
+            return HTCAPTION;
+
+        return HTCLIENT;
+            
     }
 
     void zen_set_key_state(ZEN_Window* window, int index, bool value) {
@@ -220,10 +288,24 @@
             case VK_SCROLL:    zen_set_key_state(window, 94, value); break;
 
             default:
-                printf("[WARNING] Key Not Implemented: code=%u (index=%d)\n", code, code - 65);
+                printf(WARNF "Key Not Implemented: code=%u (index=%d)\n", code, code - 65);
                 break;
 
         }
     }   
+
+    void zen_get_mouse_position(ZEN_Window* window, ivec2 dest) {
+        
+        dest = malloc(sizeof(size_t) * 2);
+        if (dest == NULL) {
+            printf(ERRORF "Failed to allocate space for window position.\n");
+            return;
+        }
+
+        dest[0] = window->event_handler.mouse_state.x;
+        dest[1] = window->event_handler.mouse_state.y;
+        return;
+
+    }
 
 #endif // ZEN_OS_WINDOWS

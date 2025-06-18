@@ -9,7 +9,7 @@
         if (api == ZEN_RAPI_Vulkan) {
             if (zen_init_vulkan(window, ZEN_VULKAN_VERSION) < 0)
                 return -1;
-            debug_log_va("Vulkan Initialized for window %llu", __zencore_context__.window_count);
+            printf(LOGF "Vulkan Initialized for window %llu\n", __zencore_context__.window_count);
         }
         
         return 0;
@@ -90,7 +90,7 @@
             __zencore_context__.renderer_context.shader_capacity += (new_count * 2);
             ZEN_Shader* temp = (ZEN_Shader*)realloc(__zencore_context__.renderer_context.shaders, sizeof(ZEN_Shader) * __zencore_context__.renderer_context.shader_capacity); 
             if (temp == NULL) {
-                log_error("Failed to allocate space for shaders.");
+                printf(ERRORF "Failed to allocate space for shaders.\n");
                 return 0;
             }
             __zencore_context__.renderer_context.shaders = temp;
@@ -151,14 +151,14 @@
 
         obj->vertices = malloc(sizeof(ZEN_Vertex) * object.vertex_count);
         if (obj->vertices == NULL) {
-            log_error("Failed to allocate space for verticies.");
+            printf(ERRORF "Failed to allocate space for verticies.\n");
             return SIZE_MAX;
         }
         memcpy(obj->vertices, object.vertices, sizeof(ZEN_Vertex) * object.vertex_count);
 
         obj->indices = malloc(sizeof(ZEN_Vertex) * object.index_count);
         if (obj->indices == NULL) {
-            log_error("Failed to allocate space for verticies.");
+            printf(ERRORF "Failed to allocate space for verticies.\n");
             return SIZE_MAX;
         }
         memcpy(obj->indices, object.indices, sizeof(uint16_t) * object.index_count);
@@ -219,7 +219,7 @@
     uint64_t zen_get_vertex_count_at_index(size_t index) {
 
         if (index > __zencore_context__.renderer_context.render_object_count) {
-            log_error("Index is out of range at function \"zen_get_vertex_count_at_index\".");
+            printf(ERRORF "Index is out of range at function \"zen_get_vertex_count_at_index\".\n");
             return 0;
         }
 
@@ -234,7 +234,7 @@
 
         ZEN_Vertex* result = malloc(sizeof(ZEN_Vertex) * zen_get_vertex_count());
         if (result == NULL) {
-            log_error("Failed to allocate space for vertices.");
+            printf(ERRORF "Failed to allocate space for vertices.\n");
             return NULL;
         }
 
@@ -267,7 +267,7 @@
     uint64_t zen_get_index_count_at_index(size_t index) {
 
         if (index > __zencore_context__.renderer_context.render_object_count) {
-            log_error("Index is out of range at function \"zen_get_vertex_count_at_index\".");
+            printf(ERRORF "Index is out of range at function \"zen_get_index_count_at_index\".\n");
             return 0;
         }
 
@@ -282,7 +282,7 @@
 
         uint16_t* result = malloc(sizeof(uint16_t) * zen_get_index_count());
         if (result == NULL) {
-            log_error("Failed to allocate space for indices.");
+            printf(ERRORF "Failed to allocate space for indices.\n");
             return NULL;
         }
 
@@ -310,9 +310,11 @@
 
     void zen_make_model_from_transform_2d(ZEN_Window* window, ZEN_CoordinateSystem coord, ZEN_Transform* transform, vec4* model) {
 
-        size_t* size = zen_get_window_size(window);
-        float x_scaling = coord == ZEN_NDC_SPACE ? 1.0f : 1.0f / size[0];
-        float y_scaling = coord == ZEN_NDC_SPACE ? 1.0f : 1.0f / size[1];
+        ivec2 size;
+        zen_get_window_size(window, size);
+
+        float x_scaling = coord == ZEN_NDC_SPACE ? 1.0f : 1.0f / (size[0] / 2);
+        float y_scaling = coord == ZEN_NDC_SPACE ? 1.0f : 1.0f / (size[1] / 2);
 
         vec3 scaled_position;
         vec3 scaled_scale;

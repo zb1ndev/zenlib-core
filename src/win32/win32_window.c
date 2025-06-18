@@ -2,7 +2,7 @@
 
 #if defined(ZEN_OS_WINDOWS)
 
-    ZEN_Window* zen_create_window(const char* title, size_t width, size_t height, ZEN_RendererAPI api) {
+    ZEN_Window* zen_create_window(const char* title, size_t width, size_t height, ZEN_RendererAPI api, bool show_title_bar) {
 
         if (__zencore_context__.window_count >= ZEN_MAX_WINDOWS)
             return NULL;
@@ -27,20 +27,27 @@
 
         window->handle = CreateWindowEx(
             0, class_name.content, title,    
-            WS_OVERLAPPEDWINDOW,            
+            show_title_bar ? WS_OVERLAPPEDWINDOW : (WS_POPUP | WS_THICKFRAME | WS_VISIBLE),            
             CW_USEDEFAULT, CW_USEDEFAULT, width, height,
             __zencore_context__.windows[0].handle, NULL, __zencore_context__.h_instance, window        
         );
 
         if (window->handle == NULL) {
-            log_error("CreateWindowEx failed.");
-            return NULL;        
+            printf(ERRORF "CreateWindowEx failed.\n");
+            return NULL;
         }
 
         window->class_name = class_name.content;
+        window->show_title_bar = show_title_bar;
+
+        if (!show_title_bar) {
+            SetWindowLong(window->handle, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+            SetWindowLong(window->handle, GWL_EXSTYLE, 0);
+            SetWindowPos(window->handle, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
 
         if (zen_initialize_renderer(window, api) < 0) {
-            log_error("Failed to initialize renderer on window.");
+            printf(ERRORF "Failed to initialize renderer on window.\n");
             __zencore_context__.window_count++;
             zen_destroy_window(window);
             return NULL;
@@ -72,7 +79,7 @@
             return;
 
         if (zen_destroy_renderer(window, window->api) < 0)
-            log_error("Failed to destroy renderer.");
+            printf(ERRORF "Failed to destroy renderer.\n");
 
         DestroyWindow(window->handle);
         free(window->class_name);
@@ -92,13 +99,22 @@
 
     }
 
-    void zen_minimize_window(ZEN_Window* window) { ShowWindow(window->handle, SW_MINIMIZE); }
-    void zen_restore_window(ZEN_Window* window)  { ShowWindow(window->handle, SW_RESTORE);  }
-    void zen_maximize_window(ZEN_Window* window) { ShowWindow(window->handle, SW_MAXIMIZE); }
+    void zen_minimize_window(ZEN_Window* window) { 
+        ShowWindow(window->handle, SW_MINIMIZE); 
+    }
+    
+    void zen_restore_window(ZEN_Window* window)  { 
+        ShowWindow(window->handle, SW_RESTORE);  
+    }
+    
+    void zen_maximize_window(ZEN_Window* window) { 
+        ShowWindow(window->handle, SW_MAXIMIZE); 
+    }
 
     void zen_set_window_title(ZEN_Window* window, const char* title) { 
         SetWindowTextA(window->handle, title); 
     }
+
     void zen_set_window_icon(ZEN_Window* window, const char* path) { 
     
         HICON icon = (HICON)LoadImage(NULL, path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
@@ -110,52 +126,36 @@
     }
     void zen_set_window_size(ZEN_Window* window, size_t width, size_t height) {
 
-        size_t* position = zen_get_window_position(window);
-        if (position == NULL) return;
-
+        ivec2 position; 
+        zen_get_window_position(window, position);
         SetWindowPos(window->handle, NULL, position[0], position[1], width, height, SWP_SHOWWINDOW); 
-        free(position);
 
     }
 
-    size_t* zen_get_window_position(ZEN_Window* window) {
+    void zen_get_window_position(ZEN_Window* window, ivec2 dest) {
 
         RECT rect;
         GetWindowRect(window->handle, &rect);
-        
-        size_t* position = malloc(sizeof(size_t) * 2);
-        if (position == NULL) {
-            log_error("Failed to allocate space for window position.");
-            return NULL;
-        }
 
-        position[0] = rect.left;
-        position[1] = rect.top;
+        dest[0] = rect.left;
+        dest[1] = rect.top;
         
-        return position;
-    
     }
-    size_t* zen_get_window_size(ZEN_Window* window) {
+    void zen_get_window_size(ZEN_Window* window, ivec2 dest) {
         
-        size_t* position = malloc(sizeof(size_t) * 2);
-        if (position == NULL) {
-            log_error("Failed to allocate space for window size.");
-            return NULL;
-        }
-
-        position[0] = window->width;
-        position[1] = window->height;
+        dest[0] = window->width;
+        dest[1] = window->height;
         
-        return position;
-    
     }
 
     void zen_set_window_position(ZEN_Window* window, size_t x, size_t y, bool on_top) { 
         SetWindowPos(window->handle, on_top ? HWND_TOPMOST : NULL, x, y, window->width, window->height, SWP_SHOWWINDOW);
     }
+    
     void zen_set_window_focused(ZEN_Window* window, bool on_top) { 
         SetFocus(window->handle);
-        if (on_top) BringWindowToTop(window->handle);
+        if (on_top) 
+            BringWindowToTop(window->handle);
     }
 
 #endif // ZEN_OS_WINDOWS

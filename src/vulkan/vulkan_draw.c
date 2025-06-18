@@ -30,7 +30,7 @@ int zen_vk_draw_frame(size_t context_index) {
         zen_vk_recreate_swapchain(context_index);
         return 0;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        log_error("Failed to acquire swap chain image.");
+        printf(ERRORF "Failed to acquire swap chain image.\n");
         exit(1);
     }
 
@@ -134,7 +134,7 @@ int zen_vk_draw_frame(size_t context_index) {
     };
 
     if (vkQueueSubmit(context->graphics_queue, 1, &submit_info, info->in_flight_fences[current_frame]) != VK_SUCCESS) {
-        log_error("Failed to submit draw command buffer.");
+        printf(ERRORF "Failed to submit draw command buffer.\n");
         return -1;
     }
 
@@ -152,7 +152,7 @@ int zen_vk_draw_frame(size_t context_index) {
         info->window->event_handler.resized = false;
         zen_vk_recreate_swapchain(context_index);
     } else if (result != VK_SUCCESS) {
-        log_error("Failed to acquire swap chain image.");
+        printf(ERRORF "Failed to acquire swap chain image.\n");
         exit(1);
     }
 
