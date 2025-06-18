@@ -114,14 +114,14 @@
 
         // Control keys
         Z_KEY_Escape, Z_KEY_Tab, Z_KEY_CapsLock, Z_KEY_Shift, Z_KEY_Control,
-        Z_KEY_Alt, Z_KEY_Space, Z_KEY_Enter, Z_KEY_Backspace, Z_KEY_Menu,
+        Z_KEY_Alt, Z_KEY_Space, Z_KEY_Enter, Z_KEY_Backspace,
 
         // Arrow keys
         Z_KEY_Left, Z_KEY_Up, Z_KEY_Right, Z_KEY_Down,
 
         // Navigation keys
         Z_KEY_Insert, Z_KEY_Delete, Z_KEY_Home, Z_KEY_End, Z_KEY_PageUp,
-        Z_KEY_PageDown, Z_KEY_Pause, Z_KEY_PrintScreen, Z_KEY_ScrollLock,
+        Z_KEY_PageDown,
 
         // Numpad keys
         Z_KEY_NumLock, Z_KEY_Num0, Z_KEY_Num1, Z_KEY_Num2, Z_KEY_Num3, Z_KEY_Num4, Z_KEY_Num5, Z_KEY_Num6, Z_KEY_Num7, Z_KEY_Num8,
@@ -190,7 +190,7 @@
 
         ZEN_NDC_SPACE,
         ZEN_SCREEN_SPACE,
-        ZEN_WORLD_SPACE
+        ZEN_CENTERED_SPACE
 
     } ZEN_CoordinateSystem;
 

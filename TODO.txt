@@ -1,4 +1,13 @@
+Base Library TODOs
 [] - Texture Support
-[] - Copy Text Mesh Pro but with a z infront ( naming wise )
-[] - Multi-threading Abstraction / Types
 [] - 3D Support
+[] - Render to texture support
+[] - Easy compute shaders
+
+Extensions TODOs
+[] - shapes
+[] - ui components
+[] - svgs
+[] - extended input ( controllers, etc. )
+[] - multithreading
+[] - networking

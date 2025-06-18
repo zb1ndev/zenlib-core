@@ -1,4 +1,7 @@
 @echo off
+REM I acknowledge that this is not good :)
+REM I just dont care rn.
+
 setlocal enabledelayedexpansion
 
 set DIRS=src\*.c src\osag\*.c src\vulkan\*.c src\win32\*.c

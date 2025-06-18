@@ -313,15 +313,33 @@
         ivec2 size;
         zen_get_window_size(window, size);
 
-        float x_scaling = coord == ZEN_NDC_SPACE ? 1.0f : 1.0f / (size[0] / 2);
-        float y_scaling = coord == ZEN_NDC_SPACE ? 1.0f : 1.0f / (size[1] / 2);
+        float x_scaling = 1.0f;
+        float y_scaling = 1.0f;
 
-        vec3 scaled_position;
+        if (coord != ZEN_NDC_SPACE) {
+
+            x_scaling = (1.0f / (size[0] / 2));
+            y_scaling = (1.0f / (size[1] / 2));
+
+        }
+
         vec3 scaled_scale;
+        vec3 scaled_position;
 
-        zen_scale_vec3(transform->position, x_scaling, y_scaling, .0f, scaled_position);
         zen_scale_vec3(transform->scale, x_scaling, y_scaling, .0f, scaled_scale);
-    
+        zen_scale_vec3(
+            transform->position, 
+            (coord == ZEN_SCREEN_SPACE) ? (2.0f / size[0]) : x_scaling, 
+            (coord == ZEN_SCREEN_SPACE) ? (2.0f / size[1]) : y_scaling, 
+            .0f, 
+            scaled_position
+        );
+
+        if (coord == ZEN_SCREEN_SPACE) {
+            scaled_position[0] -= 1.0f;
+            scaled_position[1] -= 1.0f;
+        }
+        
         glm_mat4_identity(model);
 
         glm_translate(model, scaled_position);

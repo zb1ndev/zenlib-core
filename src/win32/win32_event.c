@@ -158,7 +158,7 @@
 
     LRESULT zen_handle_hit_test(ZEN_Window* window, LPARAM lParam) {
 
-        const int BORDER_WIDTH = 8; // Resize border width in pixels
+        const int BORDER_WIDTH = 8;
 
         POINT pt = {
             .x = GET_X_LPARAM(lParam),
@@ -183,9 +183,8 @@
         if (top)              return HTTOP;
         if (bottom)           return HTBOTTOM;
 
-        // Title bar area for dragging (adjust as needed)
-        const int title_bar_height = 32;
-        if (pt.y < title_bar_height)
+        const int TITLE_BAR_HEIGHT = 32;
+        if (pt.y < TITLE_BAR_HEIGHT)
             return HTCAPTION;
 
         return HTCLIENT;
@@ -272,23 +271,25 @@
             case VK_DECIMAL:   zen_set_key_state(window, 82, value); break;
             case VK_SEPARATOR: zen_set_key_state(window, 83, value); break;
 
-            // Left/Right Modifiers
-            case VK_LSHIFT:    zen_set_key_state(window, 84, value); break;
-            case VK_RSHIFT:    zen_set_key_state(window, 85, value); break;
-            case VK_LCONTROL:  zen_set_key_state(window, 86, value); break;
-            case VK_RCONTROL:  zen_set_key_state(window, 87, value); break;
-            case VK_LMENU:     zen_set_key_state(window, 88, value); break;
-            case VK_RMENU:     zen_set_key_state(window, 89, value); break;
-            case VK_LWIN:      zen_set_key_state(window, 90, value); break;
-            case VK_RWIN:      zen_set_key_state(window, 91, value); break;
+            // Symbols
+            case 0xBA:         zen_set_key_state(window, 84, value); break;
+            case 0xBC:         zen_set_key_state(window, 86, value); break;
+            case 0xC0:         zen_set_key_state(window, 90, value); break;
 
-            // Misc
-            case VK_PAUSE:     zen_set_key_state(window, 92, value); break;
-            case VK_SNAPSHOT:  zen_set_key_state(window, 93, value); break;
-            case VK_SCROLL:    zen_set_key_state(window, 94, value); break;
+            // TODO : More Symbols
+
+            // Left/Right Modifiers
+            case VK_LSHIFT:    zen_set_key_state(window, 95, value); break;
+            case VK_RSHIFT:    zen_set_key_state(window, 96, value); break;
+            case VK_LCONTROL:  zen_set_key_state(window, 97, value); break;
+            case VK_RCONTROL:  zen_set_key_state(window, 98, value); break;
+            case VK_LMENU:     zen_set_key_state(window, 99, value); break;
+            case VK_RMENU:     zen_set_key_state(window, 100, value); break;
+            case VK_LWIN:      zen_set_key_state(window, 101, value); break;
+            case VK_RWIN:      zen_set_key_state(window, 102, value); break;
 
             default:
-                printf(WARNF "Key Not Implemented: code=%u (index=%d)\n", code, code - 65);
+                printf(WARNF "Key Not Implemented: code=%X (index=%d)\n", code, code - 65);
                 break;
 
         }

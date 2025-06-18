@@ -6,14 +6,15 @@ size_t draw_square(const vec3 position, const vec3 scale, const vec3 color, size
 
         .enabled = true,
         .shader = shader,
-        .coord_system = ZEN_SCREEN_SPACE,
+        .coord_system = ZEN_CENTERED_SPACE,
 
         .vertex_count = 4,
         .vertices = (ZEN_Vertex[]) {
-            {{-0.5f, -0.5f}, {color[0], color[1], color[2]}},
-            {{0.5f, -0.5f},  {color[0], color[1], color[2]}},
-            {{0.5f, 0.5f},   {color[0], color[1], color[2]}},
-            {{-0.5f, 0.5f},  {color[0], color[1], color[2]}}
+            {{.0f, .0f},  {color[0], color[1], color[2]}},
+            {{1.0f, .0f},   {color[0], color[1], color[2]}},
+            {{1.0f, -1.0f},  {color[0], color[1], color[2]}},
+            {{.0f, -1.0f}, {color[0], color[1], color[2]}},
+           
         },
         
         .index_count = 6,
