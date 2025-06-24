@@ -54,6 +54,7 @@
 
     #include "vulkan/vulkan.h"
     #include "../deps/cglm/cglm.h"
+    #include "../deps/stb_image.h"
 
     #include <stdio.h>
     #include <stdlib.h>
@@ -239,6 +240,7 @@
         
         vec2 pos;
         vec3 color;
+        vec2 tex_coord;
 
     } ZEN_Vertex;
 
@@ -274,9 +276,22 @@
         uint16_t* indices;
 
         size_t shader;
+        size_t texture;
+
         ZEN_Transform transform;
 
     } ZEN_RenderObject;
+
+    typedef struct ZEN_VulkanTexture {
+
+        VkImage image;
+        VkDeviceMemory memory;
+        VkImageView view;
+
+        VkDeviceSize size;
+        VkDescriptorSet descriptor;
+
+    } ZEN_VulkanTexture;
 
     typedef struct ZEN_VulkanSurfaceInfo {
 
@@ -345,6 +360,15 @@
 
         size_t graphics_pipline_count;
         ZEN_VulkanRenderPipline* graphics_pipelines;
+
+        VkDescriptorSetLayout descriptor_set_layout;
+        VkDescriptorPool descriptor_pool;
+
+        size_t texture_count;
+        size_t texture_capacity;
+        ZEN_VulkanTexture* textures;
+        
+        VkSampler texture_sampler;
 
         VkRenderPass render_pass;
 
@@ -570,7 +594,7 @@
          * Initializes the given renderer API on the specified window.
          * @param window The window to bind the renderer API to.
          * @param api The renderer API to initialize.
-         * @returns 0 if successful, otherwise an error code.
+         * @returns 0 if successful, otherwise -1 if it fails.
          */
         int zen_initialize_renderer(ZEN_Window* window, ZEN_RendererAPI api);
 
@@ -578,7 +602,7 @@
          * Destroys the renderer API associated with the specified window.
          * @param window The window whose renderer API will be destroyed.
          * @param api The renderer API to destroy.
-         * @returns 0 if successful, otherwise an error code.
+         * @returns 0 if successful, otherwise -1 if it fails.
          */
         int zen_destroy_renderer(ZEN_Window* window, ZEN_RendererAPI api);
 
@@ -619,16 +643,16 @@
         /**
          * Removes a render object from the internal render object list.
          * @param object Pointer to the render object to remove.
-         * @returns 0 if successful, otherwise an error code.
+         * @returns 0 if successful, otherwise -1 if it fails.
          */
         int zen_remove_render_object(ZEN_RenderObject* object);
 
         /**
          * Clears all render objects from the internal render object list.
-         * @returns 0 if successful, otherwise an error code.
+         * @returns 0 if successful, otherwise -1 if it fails.
          */
         int zen_clear_render_objects(void);
-
+        
         /**
          * Gets the total number of vertices currently managed.
          * @returns The total vertex count.
@@ -676,7 +700,7 @@
         /**
          * Draws a frame on the specified window, submitting all current render objects.
          * @param window The window to draw the frame on.
-         * @returns 0 if successful, otherwise an error code.
+         * @returns 0 if successful, otherwise -1 if it fails.
          */
         int zen_draw_frame(ZEN_Window* window);
 
@@ -740,6 +764,15 @@
         int zen_vk_append_graphics_pipeline(size_t shader_index);
         int zen_vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer* buffer, VkDeviceMemory* buffer_memory);
         int zen_vk_copy_buffer(VkBuffer src_buffer, VkBuffer dest_buffer, VkDeviceSize size);
+        int zen_vk_create_image(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage* image, VkDeviceMemory* image_memory);
+        VkImageView zen_vk_create_image_view(VkImage image, VkFormat format);
+        VkCommandBuffer zen_vk_begin_single_command(void);
+        void zen_vk_end_single_command(VkCommandBuffer command_buffer);
+        void zen_vk_transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
+        void zen_vk_copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+        int zen_vk_create_descriptor_pool(void);
+        int zen_vk_create_descriptor_set(size_t index);
+        size_t zen_vk_upload_image_data(byte* raw_image_data, size_t width, size_t height);
 
         // vulkan_init.c
         int zen_init_vulkan(ZEN_Window* window, uint32_t api_version);
@@ -752,12 +785,16 @@
         int zen_vk_create_swap_chain(size_t context_index);
         int zen_vk_create_image_views(size_t context_index);
         int zen_vk_create_render_pass(size_t context_index);
+        int zen_vk_create_descriptor_set_layout(void);
         int zen_vk_create_graphics_pipelines(void);
         int zen_vk_create_graphics_pipeline(ZEN_Shader* shader);
         int zen_vk_create_framebuffers(size_t context_index);
         int zen_vk_create_command_pool(void);
+        int zen_vk_create_default_image(void);
+        int zen_vk_create_image_sampler(void);
         int zen_vk_create_vertex_buffer(void);
         int zen_vk_create_index_buffer(void);
+        int zen_vk_create_descriptor_sets();
         int zen_vk_create_command_buffers(size_t context_index);
         int zen_vk_create_sync_objects(size_t context_index);
 

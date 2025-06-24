@@ -95,13 +95,22 @@ int zen_vk_draw_frame(size_t context_index) {
         if (info->window->view_mode == ZEN_VIEW_MODE_2D) 
             zen_make_model_from_transform_2d(info->window, obj->coord_system, &obj->transform, model);
             
-        vkCmdPushConstants(
+        vkCmdPushConstants (
             cmd,
             pipeline->pipeline_layout,
             VK_SHADER_STAGE_VERTEX_BIT,
             0,
             sizeof(mat4),
             &model
+        );
+        
+        vkCmdBindDescriptorSets (
+            cmd, 
+            VK_PIPELINE_BIND_POINT_GRAPHICS, 
+            pipeline->pipeline_layout, 0, 1, 
+            &context->textures[obj->texture].descriptor,
+            0, 
+            NULL
         );
 
         vkCmdDrawIndexed (

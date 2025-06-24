@@ -11,7 +11,7 @@
         WNDCLASS window_class = {
             .lpszClassName = class_name.content,
             .lpfnWndProc = ZEN_WindowProcedure,
-            .hInstance = __zencore_context__.h_instance,
+            .hInstance = __zencore_context__.h_instance
         };
         RegisterClass(&window_class);
 
@@ -26,8 +26,8 @@
         };
 
         window->handle = CreateWindowEx(
-            0, class_name.content, title,    
-            show_title_bar ? WS_OVERLAPPEDWINDOW : (WS_POPUP | WS_THICKFRAME | WS_VISIBLE),            
+            0, class_name.content, title,
+            show_title_bar ? WS_OVERLAPPEDWINDOW : WS_POPUP,            
             CW_USEDEFAULT, CW_USEDEFAULT, width, height,
             __zencore_context__.windows[0].handle, NULL, __zencore_context__.h_instance, window        
         );
@@ -39,12 +39,6 @@
 
         window->class_name = class_name.content;
         window->show_title_bar = show_title_bar;
-
-        if (!show_title_bar) {
-            SetWindowLong(window->handle, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-            SetWindowLong(window->handle, GWL_EXSTYLE, 0);
-            SetWindowPos(window->handle, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-        }
 
         if (zen_initialize_renderer(window, api) < 0) {
             printf(ERRORF "Failed to initialize renderer on window.\n");
@@ -154,8 +148,7 @@
     
     void zen_set_window_focused(ZEN_Window* window, bool on_top) { 
         SetFocus(window->handle);
-        if (on_top) 
-            BringWindowToTop(window->handle);
+        if (on_top) BringWindowToTop(window->handle);
     }
 
 #endif // ZEN_OS_WINDOWS

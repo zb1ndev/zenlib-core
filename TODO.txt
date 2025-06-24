@@ -3,6 +3,7 @@ Base Library TODOs
 [] - 3D Support
 [] - Render to texture support
 [] - Easy compute shaders
+[] - Remove 3rd party dependencies
 
 Extensions TODOs
 [] - shapes

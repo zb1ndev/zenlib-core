@@ -53,6 +53,11 @@ int zen_init_vulkan(ZEN_Window* window, uint32_t api_version) {
         return -1;
     }
 
+    if (zen_vk_create_descriptor_set_layout() < 0) {
+        printf(ERRORF "Failed to create descriptor sets.\n");
+        return -1;
+    }
+
     if (zen_vk_create_graphics_pipelines() < 0) {
         printf(ERRORF "Failed to create graphics pipelines.\n");
         return -1;
@@ -68,6 +73,16 @@ int zen_init_vulkan(ZEN_Window* window, uint32_t api_version) {
         return -1;
     }
 
+    if (zen_vk_create_default_image() < 0) {
+        printf(ERRORF "Failed to create temporary image sampler.\n");
+        return -1;
+    }
+
+    if (zen_vk_create_image_sampler() < 0) {
+        printf(ERRORF "Failed to create temporary image sampler.\n");
+        return -1;
+    }
+
     if (!__zencore_context__.vk_context.info.initialized && zen_vk_create_vertex_buffer() < 0) {
         printf(ERRORF "Failed to create vertex buffer.\n");
         return -1;
@@ -75,6 +90,12 @@ int zen_init_vulkan(ZEN_Window* window, uint32_t api_version) {
 
     if (!__zencore_context__.vk_context.info.initialized && zen_vk_create_index_buffer() < 0) {
         printf(ERRORF "Failed to create index buffer.\n");
+        return -1;
+    }
+
+    // For default texture
+    if (zen_vk_create_descriptor_sets() < 0) {
+        printf(ERRORF "Failed to create descriptor sets.\n");
         return -1;
     }
 
@@ -94,15 +115,16 @@ int zen_init_vulkan(ZEN_Window* window, uint32_t api_version) {
 }
 
 void zen_destroy_vulkan(bool is_last, size_t context_index) {
-    
+
+    ZEN_VulkanContext* context = &__zencore_context__.vk_context;
     ZEN_VulkanSurfaceInfo* info = &__zencore_context__.vk_context.surfaces[context_index];
 
-    vkDeviceWaitIdle(__zencore_context__.vk_context.device);
+    vkDeviceWaitIdle(context->device);
 
     for (size_t i = 0; i < ZEN_MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroySemaphore(__zencore_context__.vk_context.device, info->render_finished_semaphores[i], NULL);
-        vkDestroySemaphore(__zencore_context__.vk_context.device, info->image_available_semaphores[i], NULL);
-        vkDestroyFence(__zencore_context__.vk_context.device, info->in_flight_fences[i], NULL);
+        vkDestroySemaphore(context->device, info->render_finished_semaphores[i], NULL);
+        vkDestroySemaphore(context->device, info->image_available_semaphores[i], NULL);
+        vkDestroyFence(context->device, info->in_flight_fences[i], NULL);
     }
 
     free(info->image_available_semaphores);
@@ -112,45 +134,58 @@ void zen_destroy_vulkan(bool is_last, size_t context_index) {
     free(info->command_buffers);
 
     zen_vk_cleanup_swapchain(context_index);
-    
+
     free(info->swap_chain_images);
     free(info->present_modes);
     free(info->surface_formats);
 
-    vkDestroySurfaceKHR(__zencore_context__.vk_context.instance, info->surface, NULL);
+    vkDestroySurfaceKHR(context->instance, info->surface, NULL);
 
     if (is_last) {
 
-        for (size_t i = 0; i < __zencore_context__.vk_context.graphics_pipline_count; ++i) {
+        vkDestroyDescriptorPool(context->device, context->descriptor_pool, NULL);
+        vkDestroyDescriptorSetLayout(context->device, context->descriptor_set_layout, NULL);
+
+        vkDestroySampler(context->device, context->texture_sampler, NULL);
+        
+        for (size_t i = 0; i < context->texture_count; i++) {
+            vkDestroyImageView(context->device, context->textures[i].view, NULL);
+            vkDestroyImage(context->device, context->textures[i].image, NULL);
+            vkFreeMemory(context->device, context->textures[i].memory, NULL);
+        }
+
+        free(context->textures);
+
+        for (size_t i = 0; i < context->graphics_pipline_count; ++i) {
             
             vkDestroyPipeline ( 
-                __zencore_context__.vk_context.device,  
-                __zencore_context__.vk_context.graphics_pipelines[i].graphics_pipeline, 
+                context->device,  
+                context->graphics_pipelines[i].graphics_pipeline, 
                 NULL
             );
 
             vkDestroyPipelineLayout (
-                __zencore_context__.vk_context.device, 
-                __zencore_context__.vk_context.graphics_pipelines[i].pipeline_layout, 
+                context->device, 
+                context->graphics_pipelines[i].pipeline_layout, 
                 NULL
             );
 
         }
 
-        free(__zencore_context__.vk_context.graphics_pipelines);
+        free(context->graphics_pipelines);
         free(__zencore_context__.renderer_context.shaders);
 
-        vkDestroyRenderPass(__zencore_context__.vk_context.device, __zencore_context__.vk_context.render_pass, NULL);
-        vkDestroyCommandPool(__zencore_context__.vk_context.device, __zencore_context__.vk_context.command_pool, NULL);
+        vkDestroyRenderPass(context->device, context->render_pass, NULL);
+        vkDestroyCommandPool(context->device, context->command_pool, NULL);
 
-        vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer, NULL);
-        vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.vertex_buffer_memory, NULL);
+        vkDestroyBuffer(context->device, context->vertex_buffer, NULL);
+        vkFreeMemory(context->device, context->vertex_buffer_memory, NULL);
         
-        vkDestroyBuffer(__zencore_context__.vk_context.device, __zencore_context__.vk_context.index_buffer, NULL);
-        vkFreeMemory(__zencore_context__.vk_context.device, __zencore_context__.vk_context.index_buffer_memory, NULL);
+        vkDestroyBuffer(context->device, context->index_buffer, NULL);
+        vkFreeMemory(context->device, context->index_buffer_memory, NULL);
         
-        vkDestroyDevice(__zencore_context__.vk_context.device, NULL);
-        vkDestroyInstance(__zencore_context__.vk_context.instance, NULL);
+        vkDestroyDevice(context->device, NULL);
+        vkDestroyInstance(context->instance, NULL);
 
     }
 
@@ -287,7 +322,10 @@ int zen_vk_create_logical_device(void) {
     size_t extension_count = 0;
     const char** extensions = zen_vk_get_device_extensions(&extension_count);
 
-    VkPhysicalDeviceFeatures device_features = {};
+    VkPhysicalDeviceFeatures device_features = (VkPhysicalDeviceFeatures) {
+        .samplerAnisotropy = VK_TRUE
+    };
+
     VkDeviceCreateInfo create_info = (VkDeviceCreateInfo) {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .enabledExtensionCount = (uint32_t)extension_count,
@@ -416,37 +454,12 @@ int zen_vk_create_image_views(size_t context_index) {
 
     for (size_t i = 0; i < info->swap_chain_image_count; i++) {
         
-        VkImageViewCreateInfo create_info = (VkImageViewCreateInfo) {
-            
-            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image = info->swap_chain_images[i],
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = info->swap_chain_image_format,
-            
-            .components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-            .components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-            .components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-            .components.a = VK_COMPONENT_SWIZZLE_IDENTITY,
-            
-            .subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .subresourceRange.baseMipLevel = 0,
-            .subresourceRange.levelCount = 1,
-            .subresourceRange.baseArrayLayer = 0,
-            .subresourceRange.layerCount = 1,
-
-        };
-
-        if (vkCreateImageView(__zencore_context__.vk_context.device, &create_info, NULL, &info->swap_chain_image_views[i]) != VK_SUCCESS) {
-            printf(ERRORF "Failed to create image views.\n");
-            return -1;
-        }
-
+        info->swap_chain_image_views[i] = zen_vk_create_image_view(info->swap_chain_images[i], info->swap_chain_image_format);
         info->swap_chain_image_view_count++;
 
     }
 
     return 0;
-
 
 }
 
@@ -512,6 +525,36 @@ int zen_vk_create_render_pass(size_t context_index) {
 
 }
 
+int zen_vk_create_descriptor_set_layout(void) {
+
+    if (__zencore_context__.vk_context.info.initialized)
+        return 0;
+    
+    ZEN_VulkanContext* context = &__zencore_context__.vk_context;
+
+    VkDescriptorSetLayoutBinding sampler_layout_binding = (VkDescriptorSetLayoutBinding) {
+        .binding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1,
+        .pImmutableSamplers = NULL,
+        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+    };
+
+    VkDescriptorSetLayoutCreateInfo layout_info = (VkDescriptorSetLayoutCreateInfo) {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = 1,
+        .pBindings = &sampler_layout_binding
+    };
+
+    if (vkCreateDescriptorSetLayout(context->device, &layout_info, NULL, &context->descriptor_set_layout) != VK_SUCCESS) {
+        printf(ERRORF "Failed to create descriptor set layout.\n");
+        return -1;
+    }
+
+    return 0;   
+
+}
+
 int zen_vk_create_graphics_pipelines(void) {
 
     if (__zencore_context__.vk_context.info.initialized)
@@ -534,9 +577,6 @@ int zen_vk_create_graphics_pipeline(ZEN_Shader* shader) {
 
     ZEN_VulkanRenderPipline* pipline = &__zencore_context__.vk_context.graphics_pipelines[__zencore_context__.vk_context.graphics_pipline_count];
     
-    // const char* fragment_shader_path = "./examples/vulkan/shaders/compiled/frag.spv";
-    // const char* vertex_shader_path = "./examples/vulkan/shaders/compiled/vert.spv";
-
     size_t vert_shader_buf_len = 0;
     size_t frag_shader_buf_len = 0;
 
@@ -584,7 +624,7 @@ int zen_vk_create_graphics_pipeline(ZEN_Shader* shader) {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .vertexBindingDescriptionCount = 1,
         .pVertexBindingDescriptions = &binding_description,
-        .vertexAttributeDescriptionCount = 2,
+        .vertexAttributeDescriptionCount = 3,
         .pVertexAttributeDescriptions = attribute_descriptions
     };
 
@@ -625,14 +665,17 @@ int zen_vk_create_graphics_pipeline(ZEN_Shader* shader) {
     };
 
     VkPipelineColorBlendAttachmentState color_blend_attachment = (VkPipelineColorBlendAttachmentState) {
-        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-        .blendEnable = VK_FALSE,
-        .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-        .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+        .blendEnable = VK_TRUE,
+        .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+        .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
         .colorBlendOp = VK_BLEND_OP_ADD,
         .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
         .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-        .alphaBlendOp = VK_BLEND_OP_ADD
+        .alphaBlendOp = VK_BLEND_OP_ADD,
+        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+                          VK_COLOR_COMPONENT_G_BIT |
+                          VK_COLOR_COMPONENT_B_BIT |
+                          VK_COLOR_COMPONENT_A_BIT,
     };
 
     VkPipelineColorBlendStateCreateInfo color_blending = (VkPipelineColorBlendStateCreateInfo) {
@@ -655,8 +698,8 @@ int zen_vk_create_graphics_pipeline(ZEN_Shader* shader) {
 
     VkPipelineLayoutCreateInfo pipeline_layout_info = (VkPipelineLayoutCreateInfo) {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 0,
-        .pSetLayouts = NULL,
+        .setLayoutCount = 1,
+        .pSetLayouts = &__zencore_context__.vk_context.descriptor_set_layout,
         .pushConstantRangeCount = 1,
         .pPushConstantRanges = &push_constant_range
     };
@@ -774,6 +817,59 @@ int zen_vk_create_command_pool(void) {
 
 }
 
+int zen_vk_create_default_image(void) {
+
+    if (__zencore_context__.vk_context.info.initialized)
+        return 0;
+    
+    byte data[4] = { 0xFF, 0xFF, 0xFF, 0xFF }; 
+    zen_vk_upload_image_data(data, 1, 1);
+
+    printf(LOGF "Uploaded Image.\n");
+
+    return 0;
+        
+}
+
+int zen_vk_create_image_sampler(void) {
+
+    if (__zencore_context__.vk_context.info.initialized)
+        return 0;
+
+    ZEN_VulkanContext* context = &__zencore_context__.vk_context;
+
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties(context->physical_device, &properties);
+
+    VkSamplerCreateInfo sampler_info = (VkSamplerCreateInfo) {
+
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter = VK_FILTER_LINEAR,
+        .minFilter = VK_FILTER_LINEAR,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .anisotropyEnable = VK_TRUE,
+        .maxAnisotropy = properties.limits.maxSamplerAnisotropy,
+        .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+        .unnormalizedCoordinates = VK_FALSE,
+        .compareEnable = VK_FALSE,
+        .compareOp = VK_COMPARE_OP_ALWAYS,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .mipLodBias = 0.0f,
+        .minLod = 0.0f,
+        .maxLod = 0.0f
+    };
+
+    if (vkCreateSampler(context->device, &sampler_info, NULL, &context->texture_sampler) != VK_SUCCESS) {
+        printf(ERRORF "Failed to create texture sampler.\n");
+        return -1;
+    }
+
+    return 0;
+
+}
+
 int zen_vk_create_vertex_buffer(void) {
 
     VkBuffer staging_buffer;
@@ -846,6 +942,17 @@ int zen_vk_create_index_buffer(void) {
     zen_vk_copy_buffer(staging_buffer, __zencore_context__.vk_context.index_buffer, buffer_size);
     vkDestroyBuffer(__zencore_context__.vk_context.device, staging_buffer, NULL);
     vkFreeMemory(__zencore_context__.vk_context.device, staging_buffer_memory, NULL);
+
+    return 0;
+
+}
+
+int zen_vk_create_descriptor_sets() {
+
+    ZEN_VulkanContext* context = &__zencore_context__.vk_context;
+
+    for (size_t i = 0; i < context->texture_count; i++)
+        zen_vk_create_descriptor_set(i);
 
     return 0;
 

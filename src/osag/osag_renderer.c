@@ -143,6 +143,7 @@
         *obj = (ZEN_RenderObject) {
             .enabled = object.enabled,
             .shader = object.shader,
+            .texture = object.texture,
             .coord_system = object.coord_system,
             .vertex_count = object.vertex_count,
             .index_count = object.index_count,
